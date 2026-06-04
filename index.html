@@ -107,6 +107,11 @@
         .glass-card:hover::before {
             opacity: 1;
         }
+
+        /* Efecto Shimmer de luz para el Botón */
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
     </style>
 </head>
 
@@ -148,10 +153,23 @@
             </div>
 
             <!-- Texto -->
-            <p class="font-normal text-slate-500 text-sm sm:text-base leading-relaxed mb-5">
+            <p class="font-normal text-slate-500 text-sm sm:text-base leading-relaxed mb-6">
                 Estamos metiéndole toda la tecnología para brindarles el mejor modelo híbrido. 
                 Pronto podrán descargarlo, adaptarlo a su gestión y ayudarnos a perfeccionarlo con su valioso feedback. ¡Será de libre acceso para todos!
             </p>
+
+            <!-- Botón Principal Llamativo -->
+            <a href="https://forms.gle/YbykNkgCSdknb4STA" target="_blank" rel="noopener noreferrer" class="group relative w-full sm:w-auto mb-8 inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-teal to-brand-dark text-white font-extrabold text-sm sm:text-base rounded-full shadow-[0_8px_20px_-6px_rgba(0,123,133,0.6)] hover:shadow-[0_12px_25px_-6px_rgba(0,32,91,0.6)] hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                <!-- Capa de luz animada -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] skew-x-12"></div>
+                
+                <span class="relative z-10">¡Únete a La Movida de SST!</span>
+                
+                <!-- Icono de Rayo que se mueve al hacer hover -->
+                <svg class="w-5 h-5 relative z-10 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+            </a>
 
             <!-- Autor -->
             <div class="mb-5 inline-flex items-center gap-2 px-4 py-2 bg-slate-50/80 border border-slate-200 rounded-full shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
