@@ -14,7 +14,6 @@
     <meta property="og:url" content="https://www.movidasst.com/">
     <meta property="og:title" content="Herramienta en Construcción | La Movida de SST">
     <meta property="og:description" content="Próximamente nueva herramienta para la Evaluación de Procesos Peligrosos. De la reacción a la prevención.">
-    <!-- El logo para la previsualización en redes usando la API de Thumbnails -->
     <meta property="og:image" content="https://drive.google.com/thumbnail?id=1eFg27OMJXsiGRciLG3Oz4qnyTjc_TqjU&sz=w800">
     
     <!-- Tipografía Oficial: Outfit -->
@@ -102,46 +101,32 @@
         /* Hover Effects */
         .glass-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 12px 30px -4px rgba(0, 123, 133, 0.12); /* Sombra tintada en Teal */
+            box-shadow: 0 12px 30px -4px rgba(0, 123, 133, 0.12);
         }
         
         .glass-card:hover::before {
-            opacity: 1; /* Aparece la Línea Mágica */
-        }
-
-        /* Utilidad para animar engranes */
-        .spin-slow {
-            animation: spin 8s linear infinite;
-        }
-        .spin-slow-reverse {
-            animation: spin 10s linear infinite reverse;
-        }
-        
-        @keyframes gradientMove {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
+            opacity: 1;
         }
     </style>
 </head>
-<body class="tech-grid min-h-screen font-sans text-slate-600 flex items-center justify-center relative overflow-hidden antialiased selection:bg-brand-teal selection:text-white">
 
-    <!-- Luces (Glow) Ambientales -->
-    <div class="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-brand-teal rounded-full blur-[120px] opacity-5 pulse-glow" style="animation-delay: 0s;"></div>
-    <div class="absolute bottom-[-15%] right-[-10%] w-[35rem] h-[35rem] bg-brand-green rounded-full blur-[120px] opacity-5 pulse-glow" style="animation-delay: 2s;"></div>
-    <div class="absolute top-[20%] right-[10%] w-[20rem] h-[20rem] bg-brand-yellow rounded-full blur-[120px] opacity-5 pulse-glow" style="animation-delay: 4s;"></div>
+<!-- SOLUCIÓN SCROLL: Usamos 'min-h-screen' para la altura mínima, 'py-12' para padding arriba/abajo, y quitamos overflow-hidden del body -->
+<body class="tech-grid min-h-screen font-sans text-slate-600 relative py-12 px-4 sm:px-6 flex flex-col items-center justify-center antialiased selection:bg-brand-teal selection:text-white">
 
-    <!-- Contenedor Principal Flotante -->
-    <div class="relative z-10 w-full max-w-xl px-4 sm:px-6 float">
+    <!-- Luces (Glow) Ambientales - Aseguramos que no bloqueen interacciones con pointer-events-none -->
+    <div class="fixed top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-brand-teal rounded-full blur-[120px] opacity-5 pulse-glow pointer-events-none -z-10" style="animation-delay: 0s;"></div>
+    <div class="fixed bottom-[-15%] right-[-10%] w-[35rem] h-[35rem] bg-brand-green rounded-full blur-[120px] opacity-5 pulse-glow pointer-events-none -z-10" style="animation-delay: 2s;"></div>
+    
+    <!-- Contenedor Principal (Ya no usa absolute center que rompía el scroll, usa flex del body) -->
+    <div class="w-full max-w-xl float relative z-10 mx-auto">
         
-        <!-- Tarjeta Glassmorphism (Paddings ajustados para no alargarla) -->
+        <!-- Tarjeta Glassmorphism -->
         <div class="glass-card rounded-3xl p-6 sm:p-8 md:p-10 flex flex-col items-center text-center">
             
-            <!-- Logo de la Marca (Compacto) -->
+            <!-- Logo de la Marca -->
             <div class="relative group mb-5 flex justify-center cursor-default">
-                <!-- Efecto de resplandor (Glow) Premium -->
                 <div class="absolute inset-0 bg-gradient-to-tr from-brand-teal via-brand-green to-brand-yellow rounded-full blur-xl opacity-30 group-hover:opacity-70 group-hover:scale-110 transition-all duration-700 ease-out"></div>
                 
-                <!-- Contenedor de la imagen circular -->
                 <div class="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full p-1.5 sm:p-2 bg-white shadow-xl group-hover:-translate-y-1 group-hover:shadow-2xl transition-all duration-500 ease-out flex items-center justify-center overflow-hidden border border-slate-100">
                     <img src="https://drive.google.com/thumbnail?id=1eFg27OMJXsiGRciLG3Oz4qnyTjc_TqjU&sz=w600" 
                          alt="Logo La Movida de SST" 
@@ -149,10 +134,10 @@
                 </div>
             </div>
 
-            <!-- Slogan (Márgenes más pegados) -->
+            <!-- Slogan -->
             <p class="text-brand-teal font-semibold tracking-widest text-[10px] sm:text-xs uppercase mb-1">De la Reacción a la Prevención</p>
 
-            <!-- Título Principal (Responsivo) -->
+            <!-- Título Principal -->
             <h1 class="font-extrabold text-2xl sm:text-3xl md:text-4xl text-brand-dark mb-2 tracking-tight">
                 Herramienta en Construcción
             </h1>
@@ -162,7 +147,7 @@
                 Evaluación de Procesos Peligrosos
             </div>
 
-            <!-- Texto (Responsivo y más compacto) -->
+            <!-- Texto -->
             <p class="font-normal text-slate-500 text-sm sm:text-base leading-relaxed mb-5">
                 Estamos metiéndole toda la tecnología para brindarles el mejor modelo híbrido. 
                 Pronto podrán descargarlo, adaptarlo a su gestión y ayudarnos a perfeccionarlo con su valioso feedback. ¡Será de libre acceso para todos!
@@ -176,34 +161,34 @@
                 <span class="text-xs sm:text-sm text-slate-600 font-medium">Elaborado por <span class="font-bold text-brand-dark">David Linares Brea</span></span>
             </div>
 
-            <!-- Redes y Contacto (Grilla ajustada para celular) -->
-            <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+            <!-- Redes y Contacto -->
+            <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                 <!-- Web -->
-                <a href="https://www.movidasst.com" target="_blank" class="flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-teal hover:bg-white hover:shadow-sm transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                    www.movidasst.com
+                <a href="https://www.movidasst.com" target="_blank" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-teal hover:bg-white hover:shadow-sm transition-all">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    <span class="truncate">www.movidasst.com</span>
                 </a>
                 
                 <!-- Correo -->
-                <a href="mailto:info@movidasst.com" class="flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-teal hover:bg-white hover:shadow-sm transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    info@movidasst.com
+                <a href="mailto:info@movidasst.com" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-teal hover:bg-white hover:shadow-sm transition-all">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <span class="truncate">info@movidasst.com</span>
                 </a>
                 
                 <!-- WhatsApp -->
-                <a href="https://wa.me/56968615650" target="_blank" class="flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-green hover:bg-white hover:shadow-sm transition-all">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    +56 9 6861 5650
+                <a href="https://wa.me/56968615650" target="_blank" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-green hover:bg-white hover:shadow-sm transition-all">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    <span class="truncate">+56 9 6861 5650</span>
                 </a>
                 
-                <!-- Canal de WhatsApp (Destacado) -->
-                <a href="https://whatsapp.com/channel/0029Va0mlH5Jf05mrcCz8r3e" target="_blank" class="flex items-center justify-center gap-2 py-2 px-3 sm:px-4 rounded-xl bg-brand-green/10 border border-brand-green/20 text-brand-green hover:bg-brand-green hover:text-white shadow-sm transition-all font-medium">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    Canal de WhatsApp
+                <!-- Canal de WhatsApp -->
+                <a href="https://whatsapp.com/channel/0029Va0mlH5Jf05mrcCz8r3e" target="_blank" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-green/10 border border-brand-green/20 text-brand-green hover:bg-brand-green hover:text-white shadow-sm transition-all font-medium">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    <span class="truncate">Canal WhatsApp</span>
                 </a>
             </div>
 
-            <!-- Pie de tarjeta (Margen reducido) -->
+            <!-- Pie de tarjeta -->
             <div class="mt-6 pt-5 border-t border-slate-100 w-full text-[11px] sm:text-xs text-slate-400 font-light">
                 Un proyecto de código abierto de <span class="font-extrabold text-brand-dark">MOVIDA</span> <span class="font-bold text-brand-teal">SST</span>
             </div>
