@@ -1,409 +1,412 @@
-begin;
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Matriz de Riesgos SST | La Movida SST Plus</title>
+  <meta name="description" content="Herramienta profesional para identificación de peligros, evaluación y tratamiento de riesgos de SST, con matriz 5x5 configurable, jerarquía de controles, Excel, PDF y respaldo local.">
+  <meta name="theme-color" content="#0B2A6F">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Matriz de Riesgos SST | La Movida SST Plus">
+  <meta property="og:description" content="Identifica peligros, evalúa riesgos y documenta controles con una herramienta mobile first para profesionales de SST.">
+  <meta property="og:image" content="https://drive.google.com/thumbnail?id=1MjVa3JxeKC95xEdlcZ5ZFMCKlatbrU2s&sz=w1200">
+  <meta property="og:locale" content="es_VE">
+  <meta name="twitter:card" content="summary_large_image">
 
--- --------------------------------------------------------------------------
--- 0. PRERREQUISITOS
--- --------------------------------------------------------------------------
-do $$
-begin
-  if to_regclass('public.catalogos_riesgo_sst') is null then
-    raise exception 'Falta public.catalogos_riesgo_sst. Ejecuta primero la migración de catálogos.';
-  end if;
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 
-  if to_regclass('public.integrantes') is null then
-    raise exception 'Falta public.integrantes.';
-  end if;
+  <style>
+    :root{
+      --navy:#0B2A6F;--petrol:#006D8F;--turq:#00AFC5;--green:#58B947;
+      --yellow:#F4C430;--vblue:#0038A8;--red:#CF142B;
+      --ink:#172033;--muted:#64748b;--line:#dbe5ee;--bg:#f5f8fb;--surface:#fff;
+      --low:#2f7d32;--medium:#9a6700;--high:#c2410c;--very:#b42318;
+      --shadow:0 14px 38px rgba(15,41,71,.09);--radius:20px;--max:1220px;
+    }
+    *{box-sizing:border-box} html{scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 10% -10%,rgba(0,175,197,.08),transparent 28rem),var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+    button,input,select,textarea{font:inherit} button,a{-webkit-tap-highlight-color:transparent}
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(0,109,143,.22);outline-offset:2px}
+    a{color:inherit}.hidden{display:none!important}.wrap{width:min(100% - 26px,var(--max));margin-inline:auto}
+    .flagbar{height:5px;background:linear-gradient(90deg,var(--yellow) 0 33.33%,var(--vblue) 33.33% 66.66%,var(--red) 66.66% 100%)}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+    .topbar-inner{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;min-width:0}.brand img{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:15px;padding:3px;box-shadow:0 8px 22px rgba(11,42,111,.08)}
+    .brand strong{display:block;color:var(--navy);font-size:.95rem;line-height:1.05}.brand span{display:block;color:var(--petrol);font-size:.66rem;font-weight:900;letter-spacing:.055em;text-transform:uppercase;margin-top:4px;white-space:nowrap}
+    .head-actions{display:flex;gap:7px;align-items:center}.head-name{display:none;font-size:.76rem;font-weight:800;color:var(--muted)}
+    .btn{min-height:44px;border:0;border-radius:13px;padding:0 14px;font-weight:850;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.18s ease}
+    .btn-primary{background:linear-gradient(135deg,var(--navy),var(--petrol));color:#fff;box-shadow:0 8px 20px rgba(11,42,111,.15)}
+    .btn-secondary{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn-soft{background:#edf7f8;color:var(--petrol)}.btn-danger{background:#fff1f2;color:#b42318;border:1px solid #fecdd3}.btn-green{background:#eff8ec;color:#2f7d32;border:1px solid #cfe7c8}.btn:disabled{opacity:.55;cursor:not-allowed}
+    .page{padding:18px 0 88px}.desktop-nav{display:none}.mobile-nav{position:fixed;z-index:45;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);padding:7px;border:1px solid var(--line);border-radius:20px;box-shadow:0 16px 40px rgba(7,28,60,.18)}
+    .nav-btn{border:0;background:transparent;min-height:52px;border-radius:14px;color:#64748b;font-size:.68rem;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}.nav-btn .nav-ico{font-size:1.15rem;line-height:1}.nav-btn.active{background:#eaf5f7;color:var(--navy)}
+    .hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--navy),#075779 60%,#008092);color:#fff;border-radius:25px;padding:22px 18px 29px;box-shadow:var(--shadow);margin-bottom:16px}.hero:after{content:"";position:absolute;left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,var(--yellow) 0 33.33%,var(--vblue) 33.33% 66.66%,var(--red) 66.66% 100%)}
+    .hero-top{display:flex;align-items:center;gap:12px}.hero-top img{width:62px;height:62px;border-radius:18px;object-fit:contain;background:#fff;padding:5px}.eyebrow{font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;font-weight:900;color:#ffe69a}.hero h1{margin:14px 0 8px;font-size:clamp(1.8rem,8vw,3.35rem);line-height:1;letter-spacing:-.04em}.hero p{margin:0;color:#d8edf3;font-size:.91rem;line-height:1.55;max-width:820px}.hero-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}.pill{font-size:.69rem;font-weight:850;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);padding:7px 9px;border-radius:999px;color:#edfaff}
+    .notice{border:1px solid #cfe4e7;background:#f3fbfb;border-radius:16px;padding:12px 13px;color:#315569;font-size:.78rem;line-height:1.5;margin-bottom:15px}.notice strong{color:var(--navy)}
+    .section{display:none}.section.active{display:block}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 6px 22px rgba(15,41,71,.055)}.card-pad{padding:16px}
+    .section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:20px 0 12px}.section-title{margin:0;color:var(--navy);font-size:1.3rem;letter-spacing:-.025em}.section-sub{margin:5px 0 0;color:var(--muted);font-size:.82rem;line-height:1.5}.count-pill{font-size:.73rem;font-weight:900;color:var(--petrol);background:#eaf5f7;padding:7px 9px;border-radius:999px;white-space:nowrap}
+    .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{padding:14px;min-width:0}.stat-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.055em;color:var(--muted);font-weight:900}.stat-value{font-size:1.75rem;font-weight:950;color:var(--navy);margin-top:5px;line-height:1}.stat-note{font-size:.7rem;color:var(--muted);margin-top:5px;line-height:1.35}
+    .grid-2{display:grid;grid-template-columns:1fr;gap:12px}.grid-3{display:grid;grid-template-columns:1fr;gap:12px}.chart-box{height:260px;position:relative}.heatmap-wrap{overflow:auto;padding-bottom:5px}.heatmap{min-width:520px;display:grid;grid-template-columns:180px repeat(5,1fr);gap:5px}.hm-head,.hm-side{font-size:.65rem;font-weight:900;color:#64748b;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px}.hm-side{justify-content:flex-start}.hm-cell{border-radius:10px;padding:11px 5px;text-align:center;font-size:.7rem;font-weight:900;border:1px solid transparent}.hm-cell.low{background:#edf8eb;color:#2f7d32;border-color:#d2e8cc}.hm-cell.medium{background:#fff7dc;color:#8a6100;border-color:#f3df9a}.hm-cell.high{background:#fff0e8;color:#b54708;border-color:#fed7aa}.hm-cell.very{background:#fff0f1;color:#b42318;border-color:#fecdd3}.hm-cell .hm-count{display:block;font-size:.62rem;margin-top:3px;opacity:.8}
+    .alerts{display:grid;gap:8px;max-height:310px;overflow:auto}.alert-item{border-left:4px solid #f97316;background:#fff7ed;border-radius:12px;padding:10px}.alert-item.very{border-left-color:#dc2626;background:#fff1f2}.alert-item strong{font-size:.82rem}.alert-item p{margin:4px 0 0;color:#64748b;font-size:.72rem;line-height:1.4}
+    .form-card{overflow:hidden}.form-banner{background:linear-gradient(135deg,var(--navy),var(--petrol));color:#fff;padding:18px}.form-banner h2{margin:0;font-size:1.15rem}.form-banner p{margin:5px 0 0;color:#d7eef2;font-size:.78rem;line-height:1.45}.form-body{padding:16px}.step-block{padding:16px 0;border-bottom:1px solid #edf1f5}.step-block:first-child{padding-top:0}.step-block:last-child{border-bottom:0}.step-title{display:flex;gap:9px;align-items:center;margin:0 0 12px;color:var(--navy);font-size:.95rem}.step-num{width:27px;height:27px;border-radius:9px;background:#eaf5f7;color:var(--petrol);display:grid;place-items:center;font-size:.74rem;font-weight:950;flex:0 0 auto}.form-grid{display:grid;grid-template-columns:1fr;gap:11px}.field label{display:block;margin:0 0 6px;color:#475569;font-size:.68rem;text-transform:uppercase;letter-spacing:.045em;font-weight:900}.input,.select,.textarea{width:100%;min-height:46px;border:1px solid #ccd9e4;background:#fff;border-radius:12px;padding:11px 12px;color:var(--ink)}.textarea{min-height:96px;resize:vertical;line-height:1.45}.hint{margin-top:5px;color:#7b8ba0;font-size:.69rem;line-height:1.4}.risk-result{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f8fafc;border:1px solid var(--line);padding:12px;border-radius:14px;margin-top:10px}.risk-score{font-size:1.8rem;font-weight:950;color:var(--navy)}.risk-badge{font-size:.75rem;font-weight:950;padding:8px 11px;border-radius:999px}.risk-badge.low{background:#edf8eb;color:#2f7d32}.risk-badge.medium{background:#fff7dc;color:#8a6100}.risk-badge.high{background:#fff0e8;color:#b54708}.risk-badge.very{background:#fff0f1;color:#b42318}.risk-badge.eliminated{background:#e6f7f5;color:#067a72}
+    .control-list{display:grid;gap:9px}.control{border:1px solid var(--line);border-radius:15px;padding:11px;background:#fafcfd}.control-top{display:flex;align-items:center;gap:8px}.control-top input{width:18px;height:18px}.control-name{font-size:.78rem;font-weight:950}.control-rank{font-size:.63rem;font-weight:900;background:#eef2f7;color:#64748b;border-radius:999px;padding:4px 7px;margin-left:auto}.control-fields{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}.control-fields[hidden]{display:none}.control .input,.control .select{min-height:42px;font-size:.8rem}.tool-note{border:1px solid #f2df9b;background:#fffbea;color:#6b5808;padding:10px 11px;border-radius:13px;font-size:.72rem;line-height:1.45;margin-top:10px}
+    .form-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:15px}.draft{font-size:.72rem;color:#617086;background:#f6f8fa;border:1px solid var(--line);border-radius:12px;padding:9px 10px}.error-box,.success-box{display:none;padding:11px 12px;border-radius:12px;font-size:.77rem;line-height:1.45;margin-top:10px}.error-box.show{display:block;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}.success-box.show{display:block;background:#effaf0;border:1px solid #c7e9c8;color:#246b28}
+    .toolbar{display:flex;flex-direction:column;gap:9px;margin-bottom:11px}.toolbar-actions{display:flex;flex-wrap:wrap;gap:7px}.filters{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:12px}.mobile-records{display:grid;gap:10px}.record-card{padding:13px}.record-top{display:flex;justify-content:space-between;gap:8px}.record-title{font-size:.9rem;font-weight:950;color:var(--navy);margin:0}.record-meta{font-size:.69rem;color:var(--muted);margin-top:3px}.record-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.mini{background:#f8fafc;border-radius:11px;padding:8px}.mini span{display:block;color:#7b8ba0;font-size:.61rem;text-transform:uppercase;font-weight:900}.mini strong{display:block;margin-top:3px;font-size:.75rem;color:#344054}.record-desc{font-size:.73rem;line-height:1.45;color:#475569;margin:9px 0 0}.record-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.record-actions .btn{min-height:38px;padding:0 10px;font-size:.72rem}.desktop-table{display:none}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px;background:#fff}.table{width:100%;min-width:1120px;border-collapse:collapse}.table th{position:sticky;top:0;background:#f6f8fa;color:#64748b;text-transform:uppercase;letter-spacing:.04em;font-size:.62rem;text-align:left;padding:10px;border-bottom:1px solid var(--line)}.table td{vertical-align:top;padding:10px;border-bottom:1px solid #eef2f5;font-size:.72rem;color:#475569;line-height:1.4}.table strong{color:#243247}.table .actions{white-space:nowrap}
+    .catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.catalog-card{padding:13px;text-align:center}.catalog-card .cat-num{font-size:1.65rem;font-weight:950;color:var(--petrol)}.catalog-card .cat-name{font-size:.68rem;text-transform:uppercase;font-weight:900;color:#64748b}.catalog-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}.storage-box{margin-top:12px;padding:13px;border:1px solid var(--line);background:#f8fafc;border-radius:15px}.storage-box h3{margin:0 0 5px;color:var(--navy);font-size:.9rem}.storage-box p{margin:0;color:#64748b;font-size:.73rem;line-height:1.5}
+    .toast-wrap{position:fixed;z-index:120;top:78px;right:12px;left:12px;display:grid;gap:7px;pointer-events:none}.toast{justify-self:end;max-width:390px;background:#071c3c;color:#fff;border-radius:13px;padding:10px 12px;box-shadow:0 12px 30px rgba(7,28,60,.22);font-size:.76rem;font-weight:800;opacity:0;transform:translateY(-6px);animation:toastIn .2s forwards}.toast.success{background:#246b28}.toast.danger{background:#9f1239}.toast.warning{background:#8a6100}@keyframes toastIn{to{opacity:1;transform:none}}
+    .modal{position:fixed;inset:0;background:rgba(7,28,60,.55);z-index:110;display:none;align-items:flex-end;justify-content:center}.modal.open{display:flex}.sheet{width:100%;background:#fff;border-radius:22px 22px 0 0;max-height:92vh;overflow:auto;padding:16px}.sheet h3{margin:0;color:var(--navy)}.sheet p{color:#64748b;font-size:.78rem;line-height:1.5}.sheet-actions{display:flex;gap:8px;margin-top:14px}.sheet-actions .btn{flex:1}
+    .auth{min-height:100vh;background:linear-gradient(160deg,#f7fafc,#eef6f8);display:grid;place-items:center;padding:18px}.auth-card{width:min(100%,480px);background:#fff;border:1px solid var(--line);border-radius:25px;box-shadow:0 18px 50px rgba(15,41,71,.12);overflow:hidden}.auth-flag{height:7px;background:linear-gradient(90deg,var(--yellow) 0 33.33%,var(--vblue) 33.33% 66.66%,var(--red) 66.66% 100%)}.auth-body{padding:22px}.auth-brand{display:flex;align-items:center;gap:12px}.auth-brand img{width:68px;height:68px;object-fit:contain;background:#fff;border-radius:18px}.auth h1{margin:18px 0 7px;color:var(--navy);font-size:1.55rem}.auth p{margin:0 0 16px;color:#64748b;font-size:.82rem;line-height:1.5}.auth .field{margin-top:10px}.auth-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:14px;font-size:.72rem;font-weight:800}.auth-links a{color:var(--petrol);text-decoration:none}
+    footer{margin-top:28px;background:#071c3c;color:#d6e5ef;padding:24px 0 calc(90px + env(safe-area-inset-bottom));position:relative}.footer-inner{display:flex;flex-direction:column;gap:10px}.footer-inner strong{color:#fff}.footer-inner p{margin:4px 0 0;color:#9fb8c8;font-size:.72rem}.footer-links{display:flex;gap:12px;flex-wrap:wrap}.footer-links a{color:#dbeaf3;text-decoration:none;font-size:.75rem;font-weight:850}
+    @media(min-width:640px){.wrap{width:min(100% - 38px,var(--max))}.form-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.control-fields{grid-template-columns:1.5fr .8fr}.filters{grid-template-columns:1.5fr 1fr 1fr}.catalog-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.form-actions{grid-template-columns:1fr 1fr}.head-name{display:inline}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(min-width:900px){.page{padding-bottom:45px}.mobile-nav{display:none}.desktop-nav{display:flex;gap:6px;margin:15px 0}.desktop-nav .nav-btn{flex-direction:row;min-height:44px;padding:0 14px;font-size:.78rem}.hero{padding:30px}.stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.form-body{padding:22px}.form-grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}.form-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.mobile-records{display:none}.desktop-table{display:block}.toolbar{flex-direction:row;align-items:center;justify-content:space-between}.catalog-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.catalog-actions{grid-template-columns:repeat(4,minmax(0,1fr))}.modal{align-items:center;padding:20px}.sheet{max-width:520px;border-radius:22px}.footer-inner{flex-direction:row;align-items:center;justify-content:space-between}footer{padding-bottom:24px}}
+    @media print{.no-print,.topbar,.desktop-nav,.mobile-nav,.hero,.notice,footer{display:none!important}.page{padding:0}.section{display:none!important}#view-matrix{display:block!important}.desktop-table{display:block!important}.mobile-records,.toolbar,.filters,.record-actions{display:none!important}.card{box-shadow:none;border:0}.table{min-width:100%;font-size:8px}.table th,.table td{font-size:8px;padding:5px}}
+  </style>
+</head>
+<body>
 
-  if to_regclass('public.administradores_portal') is null then
-    raise exception 'Falta public.administradores_portal.';
-  end if;
-end $$;
+<div id="auth-gate" class="auth">
+  <div class="auth-card">
+    <div class="auth-flag"></div>
+    <div class="auth-body">
+      <div class="auth-brand">
+        <img src="https://drive.google.com/thumbnail?id=1MjVa3JxeKC95xEdlcZ5ZFMCKlatbrU2s&sz=w300" alt="La Movida SST Plus">
+        <div><strong style="color:#0B2A6F">La Movida SST Plus</strong><br><span style="font-size:.72rem;color:#006D8F;font-weight:900">De la reacción a la prevención</span></div>
+      </div>
+      <h1>Matriz de Riesgos SST</h1>
+      <p>Acceso para integrantes registrados. Tus evaluaciones se guardan localmente en este navegador y los catálogos técnicos se consultan desde Supabase.</p>
+      <form id="login-form" novalidate>
+        <div class="field"><label for="login-cedula">Cédula</label><input id="login-cedula" class="input" type="text" inputmode="numeric" autocomplete="username" placeholder="Ej. 13534591" maxlength="15"></div>
+        <div class="field"><label for="login-code">Código de registro</label><input id="login-code" class="input" type="password" autocomplete="current-password" placeholder="5 caracteres" maxlength="5"></div>
+        <button id="login-btn" type="submit" class="btn btn-primary" style="width:100%;margin-top:14px">Ingresar</button>
+        <div id="login-error" class="error-box"></div>
+      </form>
+      <div class="auth-links"><a href="https://registro.movidasst.com/" target="_self">Registro</a><a href="https://www.movidasst.com/" target="_self">Página principal</a><a href="https://aplicaciones.movidasst.com/" target="_self">Aplicaciones SST</a></div>
+    </div>
+  </div>
+</div>
 
-create schema if not exists private;
-revoke all on schema private from public, anon, authenticated;
+<div id="app-shell" class="hidden">
+  <header class="topbar no-print">
+    <div class="flagbar"></div>
+    <div class="wrap topbar-inner">
+      <a class="brand" href="https://www.movidasst.com/" target="_self">
+        <img src="https://drive.google.com/thumbnail?id=1MjVa3JxeKC95xEdlcZ5ZFMCKlatbrU2s&sz=w300" alt="La Movida SST Plus">
+        <div><strong>La Movida SST Plus</strong><span>Matriz de Riesgos SST</span></div>
+      </a>
+      <div class="head-actions"><span id="member-name" class="head-name"></span><a class="btn btn-soft" href="https://aplicaciones.movidasst.com/" target="_self">Apps</a><button id="logout-btn" class="btn btn-secondary" type="button">Salir</button></div>
+    </div>
+  </header>
 
--- --------------------------------------------------------------------------
--- 1. HELPER PRIVADO DE AUTORIZACIÓN
--- --------------------------------------------------------------------------
-create or replace function private.riesgo_catalogos_admin_integrante_id(
-  p_cedula text,
-  p_codigo text
-)
-returns bigint
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select i.id
-  from public.integrantes i
-  join public.administradores_portal a
-    on a.integrante_id = i.id
-  where regexp_replace(coalesce(i.cedula, ''), '\D', '', 'g') =
-        regexp_replace(coalesce(p_cedula, ''), '\D', '', 'g')
-    and upper(trim(coalesce(i.codigo_integrante, ''))) =
-        upper(trim(coalesce(p_codigo, '')))
-    and a.activo is true
-    and a.rol = 'administrador_general'
-  limit 1;
-$$;
+  <main class="page">
+    <div class="wrap">
+      <section class="hero no-print">
+        <div class="hero-top"><img src="https://drive.google.com/thumbnail?id=1MjVa3JxeKC95xEdlcZ5ZFMCKlatbrU2s&sz=w300" alt="La Movida SST Plus"><div><div class="eyebrow">Herramienta profesional SST</div><strong>Método 5×5 configurable</strong></div></div>
+        <h1>Identifica peligros, evalúa riesgos y documenta controles</h1>
+        <p>Una herramienta práctica para estructurar la evaluación de riesgos de SST. ISO 45002:2023 y NT-04-2023 se utilizan como referencias de gestión; la matriz 5×5 y sus umbrales son una convención configurable de esta herramienta, no una fórmula prescrita por ISO.</p>
+        <div class="hero-pills"><span class="pill">ISO 45002:2023 · referencia</span><span class="pill">NT-04-2023 · contexto Venezuela</span><span class="pill">Jerarquía de controles</span><span class="pill">Excel · PDF · JSON</span></div>
+      </section>
 
-revoke all on function private.riesgo_catalogos_admin_integrante_id(text,text)
-  from public, anon, authenticated;
+      <div class="notice no-print"><strong>Criterio técnico:</strong> esta versión no llama “LOPA” a la jerarquía de controles ni reduce automáticamente el riesgo por marcar un control. El riesgo residual lo determina el evaluador tras considerar medidas implementadas o previstas. Una LOPA formal es otra metodología y requiere escenarios, frecuencias y capas de protección independientes.</div>
 
--- --------------------------------------------------------------------------
--- 2. LISTAR CATÁLOGO COMPLETO PARA EL ADMIN
--- --------------------------------------------------------------------------
-drop function if exists public.catalogos_riesgo_admin_listar(text,text);
+      <nav class="desktop-nav no-print" aria-label="Navegación principal">
+        <button class="nav-btn active" data-view="dashboard"><span class="nav-ico">▦</span> Dashboard</button>
+        <button class="nav-btn" data-view="evaluate"><span class="nav-ico">＋</span> Evaluar</button>
+        <button class="nav-btn" data-view="matrix"><span class="nav-ico">▤</span> Matriz</button>
+        <button class="nav-btn" data-view="catalogs"><span class="nav-ico">◫</span> Catálogos y respaldo</button>
+      </nav>
 
-create function public.catalogos_riesgo_admin_listar(
-  p_cedula text,
-  p_codigo text
-)
-returns table (
-  id bigint,
-  tipo text,
-  codigo text,
-  nombre text,
-  severidad_sugerida smallint,
-  descripcion text,
-  activo boolean,
-  orden integer,
-  metadata jsonb,
-  created_at timestamptz,
-  updated_at timestamptz
-)
-language plpgsql
-stable
-security definer
-set search_path = ''
-as $$
-begin
-  if private.riesgo_catalogos_admin_integrante_id(p_cedula, p_codigo) is null then
-    raise exception 'Acceso administrativo no autorizado';
-  end if;
+      <section id="view-dashboard" class="section active">
+        <div class="stats-grid">
+          <div class="card stat"><div class="stat-label">Evaluaciones</div><div id="stat-total" class="stat-value">0</div><div class="stat-note">Registros locales</div></div>
+          <div class="card stat"><div class="stat-label">Residual alto / muy alto</div><div id="stat-critical" class="stat-value" style="color:#b42318">0</div><div class="stat-note">Prioridad de tratamiento</div></div>
+          <div class="card stat"><div class="stat-label">Controles implementados</div><div id="stat-controls" class="stat-value" style="color:#2f7d32">0</div><div class="stat-note">Declarados como verificados</div></div>
+          <div class="card stat"><div class="stat-label">Reducción de categoría</div><div id="stat-reduced" class="stat-value">0</div><div class="stat-note">Inicial → residual</div></div>
+        </div>
 
-  return query
-  select
-    c.id,
-    c.tipo,
-    c.codigo,
-    c.nombre,
-    c.severidad_sugerida,
-    c.descripcion,
-    c.activo,
-    c.orden,
-    c.metadata,
-    c.created_at,
-    c.updated_at
-  from public.catalogos_riesgo_sst c
-  order by
-    case c.tipo
-      when 'elemento' then 1
-      when 'peligro' then 2
-      when 'energia' then 3
-      when 'evento' then 4
-      when 'consecuencia' then 5
-      else 99
-    end,
-    c.orden,
-    c.nombre,
-    c.codigo;
-end;
-$$;
+        <div class="grid-2" style="margin-top:12px">
+          <div class="card card-pad"><div class="section-head" style="margin-top:0"><div><h2 class="section-title">Riesgo residual</h2><p class="section-sub">Distribución por categoría.</p></div></div><div class="chart-box"><canvas id="chart-risk"></canvas></div></div>
+          <div class="card card-pad"><div class="section-head" style="margin-top:0"><div><h2 class="section-title">Peligros por área</h2><p class="section-sub">Cantidad de evaluaciones registradas.</p></div></div><div class="chart-box"><canvas id="chart-area"></canvas></div></div>
+        </div>
 
--- --------------------------------------------------------------------------
--- 3. CREAR / EDITAR
---
--- p_datos admitidos:
---   id                  bigint opcional (editar)
---   tipo                elemento|peligro|energia|evento|consecuencia
---   codigo              text
---   nombre              text
---   severidad_sugerida  1..5|null (solo consecuencia)
---   descripcion         text|null
---   activo              boolean
---   orden               integer
---
--- metadata NO se modifica desde este panel.
--- Se preserva al editar y queda {} al crear.
--- --------------------------------------------------------------------------
-drop function if exists public.catalogos_riesgo_admin_guardar(text,text,jsonb);
+        <div class="grid-2" style="margin-top:12px">
+          <div class="card card-pad"><div class="section-head" style="margin-top:0"><div><h2 class="section-title">Matriz 5×5 residual</h2><p class="section-sub">P × S. Umbrales definidos por la herramienta.</p></div></div><div class="heatmap-wrap"><div id="heatmap" class="heatmap"></div></div></div>
+          <div class="card card-pad"><div class="section-head" style="margin-top:0"><div><h2 class="section-title">Prioridades</h2><p class="section-sub">Riesgos residuales altos o muy altos.</p></div></div><div id="alerts" class="alerts"><div class="record-desc">Sin evaluaciones críticas.</div></div></div>
+        </div>
+      </section>
 
-create function public.catalogos_riesgo_admin_guardar(
-  p_cedula text,
-  p_codigo text,
-  p_datos jsonb
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_admin_id bigint;
-  v_id bigint;
-  v_tipo text;
-  v_codigo text;
-  v_nombre text;
-  v_severidad smallint;
-  v_descripcion text;
-  v_activo boolean;
-  v_orden integer;
-  v_existing public.catalogos_riesgo_sst%rowtype;
-begin
-  v_admin_id := private.riesgo_catalogos_admin_integrante_id(p_cedula, p_codigo);
+      <section id="view-evaluate" class="section">
+        <div class="card form-card">
+          <div class="form-banner"><h2 id="form-title">Nueva evaluación</h2><p>Documenta el contexto, el peligro, el riesgo actual, las medidas adicionales y el riesgo residual previsto o verificado.</p></div>
+          <form id="risk-form" class="form-body" novalidate>
+            <input id="edit-id" type="hidden">
+            <div class="step-block">
+              <h3 class="step-title"><span class="step-num">1</span> Contexto y proceso de trabajo</h3>
+              <div class="form-grid five">
+                <div class="field"><label for="area">Sede / Área *</label><input id="area" class="input" required maxlength="120" placeholder="Ej. Planta Sur"></div>
+                <div class="field"><label for="process">Proceso de trabajo *</label><input id="process" class="input" required maxlength="150" placeholder="Ej. Mantenimiento"></div>
+                <div class="field"><label for="danger-process">Proceso peligroso (NT-04, si aplica)</label><input id="danger-process" class="input" maxlength="160" placeholder="Ej. Trabajo en altura"></div>
+                <div class="field"><label for="job">Puesto de trabajo *</label><input id="job" class="input" required maxlength="140" placeholder="Ej. Técnico mecánico"></div>
+                <div class="field"><label for="workers">Trabajadores expuestos *</label><input id="workers" class="input" type="number" min="1" max="999999" required value="1"></div>
+              </div>
+            </div>
 
-  if v_admin_id is null then
-    raise exception 'Acceso administrativo no autorizado';
-  end if;
+            <div class="step-block">
+              <h3 class="step-title"><span class="step-num">2</span> Identificación del peligro y escenario</h3>
+              <div class="form-grid two">
+                <div class="field"><label for="element">Elemento del proceso *</label><select id="element" class="select" required><option value="">Cargando catálogo…</option></select></div>
+                <div class="field"><label for="element-desc">Descripción del elemento *</label><input id="element-desc" class="input" required maxlength="350" placeholder="Describe máquina, objeto, medio o condición"></div>
+              </div>
+              <div class="form-grid three" style="margin-top:11px">
+                <div class="field"><label for="hazard">Tipo / grupo de peligro *</label><select id="hazard" class="select" required><option value="">Cargando catálogo…</option></select></div>
+                <div class="field"><label for="energy">Fuente / energía asociada</label><select id="energy" class="select"><option value="">Cargando catálogo…</option></select><div class="hint">Campo complementario; no todos los peligros se describen necesariamente por una energía.</div></div>
+                <div class="field"><label for="event">Evento no deseado / mecanismo *</label><select id="event" class="select" required><option value="">Cargando catálogo…</option></select></div>
+              </div>
+              <div class="form-grid two" style="margin-top:11px">
+                <div class="field"><label for="consequence">Consecuencia / daño a la salud *</label><select id="consequence" class="select" required><option value="">Cargando catálogo…</option></select></div>
+                <div class="field"><label for="scenario">Escenario específico *</label><textarea id="scenario" class="textarea" required maxlength="700" placeholder="Describe quién o qué se expone, cómo ocurre el evento y en qué condiciones"></textarea></div>
+              </div>
+              <div class="field" style="margin-top:11px"><label for="existing-controls">Controles existentes considerados</label><textarea id="existing-controls" class="textarea" maxlength="900" placeholder="Controles que ya existen y cuya efectividad fue considerada al estimar el riesgo actual"></textarea><div class="hint">La evaluación del riesgo debe considerar la eficacia de los controles existentes. No confundas este campo con las medidas adicionales propuestas.</div></div>
+            </div>
 
-  if p_datos is null or jsonb_typeof(p_datos) <> 'object' then
-    raise exception 'Datos inválidos';
-  end if;
+            <div class="step-block">
+              <h3 class="step-title"><span class="step-num">3</span> Riesgo actual / inicial</h3>
+              <div class="form-grid two">
+                <div class="field"><label for="p-initial">Probabilidad / posibilidad de ocurrencia (P) *</label><select id="p-initial" class="select"><option value="1">1 · Muy improbable</option><option value="2">2 · Improbable</option><option value="3">3 · Posible</option><option value="4">4 · Probable</option><option value="5">5 · Muy probable</option></select></div>
+                <div class="field"><label for="s-initial">Severidad del daño (S) *</label><select id="s-initial" class="select"><option value="1">1 · Daño menor / primeros auxilios</option><option value="2">2 · Lesión o deterioro leve, sin días perdidos</option><option value="3">3 · Lesión o deterioro con días perdidos</option><option value="4">4 · Daño grave / hospitalización / discapacidad parcial</option><option value="5">5 · Muerte / discapacidad total permanente / daño catastrófico</option></select></div>
+              </div>
+              <div class="risk-result"><div><div class="hint" style="margin:0">P × S · convención de la herramienta</div><div id="initial-score" class="risk-score">1</div></div><span id="initial-badge" class="risk-badge low">Bajo</span></div>
+            </div>
 
-  -- Bloquea llaves no previstas.
-  if exists (
-    select 1
-    from jsonb_object_keys(p_datos) as keys(key)
-    where key not in (
-      'id','tipo','codigo','nombre','severidad_sugerida',
-      'descripcion','activo','orden'
-    )
-  ) then
-    raise exception 'El formulario contiene campos no permitidos';
-  end if;
+            <div class="step-block">
+              <h3 class="step-title"><span class="step-num">4</span> Medidas adicionales · jerarquía de controles</h3>
+              <div class="control-list">
+                <div class="control" data-control="eliminate"><div class="control-top"><input id="c-eliminate" type="checkbox"><label for="c-eliminate" class="control-name">Eliminación</label><span class="control-rank">1 · preferente</span></div><div id="cf-eliminate" class="control-fields" hidden><input id="d-eliminate" class="input" maxlength="500" placeholder="Describe cómo se elimina físicamente el peligro"><select id="st-eliminate" class="select"><option value="propuesto">Propuesto</option><option value="implementado">Implementado y verificado</option></select></div></div>
+                <div class="control" data-control="substitute"><div class="control-top"><input id="c-substitute" type="checkbox"><label for="c-substitute" class="control-name">Sustitución</label><span class="control-rank">2</span></div><div id="cf-substitute" class="control-fields" hidden><input id="d-substitute" class="input" maxlength="500" placeholder="Sustituye por una opción menos peligrosa"><select id="st-substitute" class="select"><option value="propuesto">Propuesto</option><option value="implementado">Implementado y verificado</option></select></div></div>
+                <div class="control" data-control="engineering"><div class="control-top"><input id="c-engineering" type="checkbox"><label for="c-engineering" class="control-name">Controles de ingeniería</label><span class="control-rank">3</span></div><div id="cf-engineering" class="control-fields" hidden><input id="d-engineering" class="input" maxlength="500" placeholder="Aislamiento, guardas, ventilación, automatización…"><select id="st-engineering" class="select"><option value="propuesto">Propuesto</option><option value="implementado">Implementado y verificado</option></select></div></div>
+                <div class="control" data-control="administrative"><div class="control-top"><input id="c-administrative" type="checkbox"><label for="c-administrative" class="control-name">Controles administrativos</label><span class="control-rank">4</span></div><div id="cf-administrative" class="control-fields" hidden><input id="d-administrative" class="input" maxlength="500" placeholder="Procedimiento, permiso, formación, señalización, rotación…"><select id="st-administrative" class="select"><option value="propuesto">Propuesto</option><option value="implementado">Implementado y verificado</option></select></div></div>
+                <div class="control" data-control="ppe"><div class="control-top"><input id="c-ppe" type="checkbox"><label for="c-ppe" class="control-name">Equipo de protección personal</label><span class="control-rank">5 · última barrera</span></div><div id="cf-ppe" class="control-fields" hidden><input id="d-ppe" class="input" maxlength="500" placeholder="Especifica el EPP requerido"><select id="st-ppe" class="select"><option value="propuesto">Propuesto</option><option value="implementado">Implementado y verificado</option></select></div></div>
+              </div>
+              <div class="tool-note"><strong>Importante:</strong> marcar un control no modifica automáticamente P o S. La eficacia debe ser evaluada y documentada. Esta sección representa la jerarquía de controles; no constituye un cálculo LOPA.</div>
+            </div>
 
-  v_id := nullif(p_datos->>'id','')::bigint;
-  v_tipo := lower(trim(coalesce(p_datos->>'tipo','')));
-  v_codigo := upper(trim(coalesce(p_datos->>'codigo','')));
-  v_nombre := trim(coalesce(p_datos->>'nombre',''));
-  v_descripcion := nullif(trim(coalesce(p_datos->>'descripcion','')), '');
-  v_activo := coalesce((p_datos->>'activo')::boolean, true);
-  v_orden := coalesce(nullif(p_datos->>'orden','')::integer, 100);
+            <div class="step-block">
+              <h3 class="step-title"><span class="step-num">5</span> Riesgo residual</h3>
+              <div class="form-grid three">
+                <div class="field"><label for="residual-state">Estado de esta valoración *</label><select id="residual-state" class="select"><option value="previsto">Previsto · controles propuestos</option><option value="verificado">Verificado · controles implementados</option></select></div>
+                <div class="field"><label for="p-residual">Probabilidad residual *</label><select id="p-residual" class="select"><option value="0">0 · Peligro eliminado</option><option value="1">1 · Muy improbable</option><option value="2">2 · Improbable</option><option value="3">3 · Posible</option><option value="4">4 · Probable</option><option value="5">5 · Muy probable</option></select></div>
+                <div class="field"><label for="s-residual">Severidad residual *</label><select id="s-residual" class="select"><option value="1">1 · Daño menor</option><option value="2">2 · Leve</option><option value="3">3 · Moderado</option><option value="4">4 · Grave</option><option value="5">5 · Catastrófico</option></select></div>
+              </div>
+              <div class="risk-result"><div><div class="hint" style="margin:0">Valoración por el profesional</div><div id="residual-score" class="risk-score">1</div></div><span id="residual-badge" class="risk-badge low">Bajo</span></div>
+              <div class="form-grid three" style="margin-top:11px">
+                <div class="field"><label for="responsible">Responsable de la acción</label><input id="responsible" class="input" maxlength="140" placeholder="Nombre o cargo"></div>
+                <div class="field"><label for="target-date">Fecha objetivo</label><input id="target-date" class="input" type="date"></div>
+                <div class="field"><label for="observations">Observaciones</label><input id="observations" class="input" maxlength="350" placeholder="Seguimiento, evidencia, revisión…"></div>
+              </div>
+            </div>
 
-  if v_tipo not in ('elemento','peligro','energia','evento','consecuencia') then
-    raise exception 'Tipo de catálogo inválido';
-  end if;
+            <div class="draft" id="draft-note">Autoguardado local del borrador activo.</div>
+            <div id="form-error" class="error-box"></div><div id="form-success" class="success-box"></div>
+            <div class="form-actions"><button id="save-add" class="btn btn-primary" type="submit">Guardar y añadir otro</button><button id="save-view" class="btn btn-secondary" type="button">Guardar y ver matriz</button><button id="clear-form" class="btn btn-danger" type="button">Limpiar formulario</button><button id="cancel-edit" class="btn btn-soft hidden" type="button">Cancelar edición</button></div>
+          </form>
+        </div>
+      </section>
 
-  if char_length(v_codigo) < 1 or char_length(v_codigo) > 80 then
-    raise exception 'El código debe tener entre 1 y 80 caracteres';
-  end if;
+      <section id="view-matrix" class="section">
+        <div class="section-head"><div><h2 class="section-title">Matriz de riesgos</h2><p class="section-sub">Registros guardados en este navegador. En móvil se muestran como tarjetas; en escritorio, como tabla.</p></div><span id="matrix-count" class="count-pill">0</span></div>
+        <div class="toolbar no-print"><div class="toolbar-actions"><button id="excel-export" class="btn btn-green" type="button">Excel</button><button id="pdf-export" class="btn btn-danger" type="button">PDF</button><button id="print-btn" class="btn btn-secondary" type="button">Imprimir</button></div><div class="toolbar-actions"><button id="json-backup" class="btn btn-soft" type="button">Respaldo JSON</button></div></div>
+        <div class="filters no-print"><input id="filter-text" class="input" type="search" placeholder="Buscar área, proceso, puesto, peligro…"><select id="filter-initial" class="select"><option value="">Riesgo inicial · todos</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Muy Alto</option></select><select id="filter-residual" class="select"><option value="">Riesgo residual · todos</option><option>Eliminado</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Muy Alto</option></select></div>
+        <div id="mobile-records" class="mobile-records"></div>
+        <div class="desktop-table"><div class="table-wrap"><table class="table"><thead><tr><th>Contexto</th><th>Peligro / escenario</th><th>Evento / consecuencia</th><th>Inicial</th><th>Medidas adicionales</th><th>Residual</th><th>Acciones</th></tr></thead><tbody id="risk-tbody"></tbody></table></div></div>
+      </section>
 
-  if v_codigo !~ '^[A-Z0-9][A-Z0-9._/-]{0,79}$' then
-    raise exception 'El código contiene caracteres no permitidos';
-  end if;
+      <section id="view-catalogs" class="section">
+        <div class="section-head"><div><h2 class="section-title">Catálogos, importación y respaldo</h2><p class="section-sub">Los cinco catálogos técnicos se consultan desde Supabase mediante una RPC de solo lectura. Las evaluaciones permanecen locales en este navegador.</p></div><span id="catalog-status" class="count-pill">Cargando…</span></div>
+        <div class="catalog-grid"><div class="card catalog-card"><div id="cat-elementos" class="cat-num">0</div><div class="cat-name">Elementos</div></div><div class="card catalog-card"><div id="cat-peligros" class="cat-num">0</div><div class="cat-name">Peligros</div></div><div class="card catalog-card"><div id="cat-energias" class="cat-num">0</div><div class="cat-name">Energías</div></div><div class="card catalog-card"><div id="cat-eventos" class="cat-num">0</div><div class="cat-name">Eventos</div></div><div class="card catalog-card"><div id="cat-consecuencias" class="cat-num">0</div><div class="cat-name">Consecuencias</div></div></div>
+        <div class="catalog-actions no-print">
+          <button id="refresh-catalogs" class="btn btn-secondary" type="button">Actualizar catálogos</button>
+          <a class="btn btn-primary" href="catalogos-admin.html" target="_self" aria-label="Administrar catálogos técnicos">Administrar catálogos</a>
+          <button id="excel-template" class="btn btn-green" type="button">Plantilla Excel</button>
+          <button id="excel-import-btn" class="btn btn-secondary" type="button">Importar Excel</button>
+          <button id="json-restore-btn" class="btn btn-secondary" type="button">Restaurar JSON</button>
+          <button id="clear-data" class="btn btn-danger" type="button">Borrar datos locales</button>
+        </div>
+        <input id="excel-file" type="file" accept=".xlsx" class="hidden"><input id="json-file" type="file" accept="application/json,.json" class="hidden">
+        <div class="storage-box"><h3>Dónde se guardan tus evaluaciones</h3><p>Los registros se almacenan en <strong>localStorage</strong> del navegador. Cerrar normalmente la pestaña no los borra, pero sí puedes perderlos al limpiar datos del sitio, usar navegación privada, cambiar de navegador/dispositivo o por políticas del navegador. Descarga periódicamente Excel o JSON. El JSON sirve para restaurar exactamente el estado de esta herramienta.</p></div>
+        <div class="storage-box"><h3>Catálogos centralizados en Supabase</h3><p>La aplicación ya no depende de Firebase. El navegador consulta únicamente <code>catalogos_riesgo_publicos()</code>; la tabla base no tiene lectura ni escritura directa para <code>anon</code> o <code>authenticated</code>. Para cambiar los catálogos se utiliza una operación administrativa controlada.</p></div>
+        <div class="storage-box"><h3>Administración técnica</h3><p>El botón <strong>Administrar catálogos</strong> abre <code>catalogos-admin.html</code> en esta misma pestaña. El panel exige credenciales de un administrador general y permite crear, editar, ordenar, activar o desactivar registros sin modificar SQL.</p></div>
+      </section>
+    </div>
+  </main>
 
-  if char_length(v_nombre) < 2 or char_length(v_nombre) > 300 then
-    raise exception 'El nombre debe tener entre 2 y 300 caracteres';
-  end if;
+  <nav class="mobile-nav no-print" aria-label="Navegación móvil"><button class="nav-btn active" data-view="dashboard"><span class="nav-ico">▦</span>Dashboard</button><button class="nav-btn" data-view="evaluate"><span class="nav-ico">＋</span>Evaluar</button><button class="nav-btn" data-view="matrix"><span class="nav-ico">▤</span>Matriz</button><button class="nav-btn" data-view="catalogs"><span class="nav-ico">◫</span>Datos</button></nav>
 
-  if v_descripcion is not null and char_length(v_descripcion) > 1500 then
-    raise exception 'La descripción no puede superar 1500 caracteres';
-  end if;
+  <footer><div class="flagbar"></div><div class="wrap footer-inner"><div><strong>La Movida SST Plus</strong><p>De la reacción a la prevención · Herramienta de apoyo al juicio profesional</p></div><div class="footer-links"><a href="https://www.movidasst.com/" target="_self">Página principal</a><a href="https://aplicaciones.movidasst.com/" target="_self">Aplicaciones SST</a><a href="https://registro.movidasst.com/" target="_self">Registro</a></div></div></footer>
+</div>
 
-  if v_orden < 0 or v_orden > 100000 then
-    raise exception 'Orden inválido';
-  end if;
+<div id="toast-wrap" class="toast-wrap"></div>
+<div id="confirm-modal" class="modal"><div class="sheet"><h3 id="confirm-title">Confirmar</h3><p id="confirm-message"></p><div class="sheet-actions"><button id="confirm-cancel" class="btn btn-secondary" type="button">Cancelar</button><button id="confirm-ok" class="btn btn-danger" type="button">Confirmar</button></div></div></div>
 
-  if v_tipo = 'consecuencia' then
-    if nullif(p_datos->>'severidad_sugerida','') is not null then
-      v_severidad := (p_datos->>'severidad_sugerida')::smallint;
-      if v_severidad < 1 or v_severidad > 5 then
-        raise exception 'La severidad sugerida debe estar entre 1 y 5';
-      end if;
-    else
-      v_severidad := null;
-    end if;
-  else
-    v_severidad := null;
-  end if;
+<script type="module">
+const SUPABASE_URL='https://lfdmbkzghnwvsapxypvt.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_bRnkA6PA8-v073nrw9zxiQ_8rVGiOn1';
+const sb=window.supabase?.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})||null;
 
-  if v_id is null then
-    insert into public.catalogos_riesgo_sst (
-      tipo,
-      codigo,
-      nombre,
-      severidad_sugerida,
-      descripcion,
-      activo,
-      orden,
-      metadata,
-      created_at,
-      updated_at
-    ) values (
-      v_tipo,
-      v_codigo,
-      v_nombre,
-      v_severidad,
-      v_descripcion,
-      v_activo,
-      v_orden,
-      '{}'::jsonb,
-      now(),
-      now()
-    )
-    returning id into v_id;
 
-    return jsonb_build_object(
-      'ok', true,
-      'accion', 'creado',
-      'id', v_id
-    );
-  end if;
+const LOGO='https://drive.google.com/thumbnail?id=1MjVa3JxeKC95xEdlcZ5ZFMCKlatbrU2s&sz=w300';
+const STORE_KEY='movida_riesgos_sst_v2'; const DRAFT_KEY='movida_riesgos_draft_v2'; const CAT_KEY='movida_riesgos_catalogos_v2'; const SESSION_KEY='movida_riesgos_access_v1';
+const $=id=>document.getElementById(id);
+const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const controlKeys=['eliminate','substitute','engineering','administrative','ppe'];
+let records=[]; let catalogs={elementos:[],peligros:[],energias:[],eventos:[],consecuencias:[]}; let chartRisk=null,chartArea=null; let pendingConfirm=null;
 
-  select *
-    into v_existing
-  from public.catalogos_riesgo_sst
-  where id = v_id;
+function safeParse(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch{return fallback}}
+function clampInt(v,min,max,def=min){const n=parseInt(v,10);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):def}
+function text(v,max=1200){return String(v??'').trim().slice(0,max)}
+function uuid(){return crypto.randomUUID?crypto.randomUUID():`r-${Date.now()}-${Math.random().toString(36).slice(2,10)}`}
+function normalizeCedula(v){return String(v||'').replace(/\D/g,'').slice(0,12)} function normalizeCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)}
+function riskCategory(score){const n=Number(score);if(n===0)return'Eliminado';if(n<=5)return'Bajo';if(n<=8)return'Medio';if(n<=15)return'Alto';return'Muy Alto'}
+function riskClass(cat){return cat==='Eliminado'?'eliminated':cat==='Bajo'?'low':cat==='Medio'?'medium':cat==='Alto'?'high':'very'}
+function riskRank(cat){return {Eliminado:0,Bajo:1,Medio:2,Alto:3,'Muy Alto':4}[cat]??99}
+function currentOptionText(id){const s=$(id);return s&&s.selectedIndex>=0?text(s.options[s.selectedIndex]?.text?.replace(/^\[.*?\]\s*-\s*/,''),300):''}
+function showMsg(el,msg){el.textContent=msg||'';el.classList.toggle('show',Boolean(msg))}
+function toast(msg,type='info'){const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;$('toast-wrap').appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),250)},3500)}
+function confirmBox(title,message){return new Promise(resolve=>{pendingConfirm=resolve;$('confirm-title').textContent=title;$('confirm-message').textContent=message;$('confirm-modal').classList.add('open')})}
+function closeConfirm(result){$('confirm-modal').classList.remove('open');if(pendingConfirm){pendingConfirm(result);pendingConfirm=null}}
+$('confirm-cancel').onclick=()=>closeConfirm(false); $('confirm-ok').onclick=()=>closeConfirm(true); $('confirm-modal').addEventListener('click',e=>{if(e.target===$('confirm-modal'))closeConfirm(false)});
 
-  if not found then
-    raise exception 'Registro no encontrado';
-  end if;
+function normalizeRecord(r){
+  if(!r||typeof r!=='object')return null;
+  const pI=clampInt(r.probabilidad_inicial,1,5,1),sI=clampInt(r.severidad_inicial,1,5,1),pR=clampInt(r.probabilidad_residual,0,5,pI),sR=clampInt(r.severidad_residual,1,5,sI);
+  const ri=pI*sI,rr=pR===0?0:pR*sR;
+  return {id:text(r.id,120)||uuid(),created_at:text(r.created_at,60)||new Date().toISOString(),updated_at:text(r.updated_at,60)||new Date().toISOString(),legacy_id:text(r.legacy_id,160),
+    area:text(r.area,120),proceso:text(r.proceso,150),proceso_peligroso:text(r.proceso_peligroso,160),puesto:text(r.puesto,140),trabajadores_expuestos:clampInt(r.trabajadores_expuestos,1,999999,1),
+    elemento_proceso:text(r.elemento_proceso,120),elemento_proceso_texto:text(r.elemento_proceso_texto,260),desc_elemento:text(r.desc_elemento,500),tipo_peligro:text(r.tipo_peligro,120),tipo_peligro_texto:text(r.tipo_peligro_texto,260),energia:text(r.energia,120),energia_texto:text(r.energia_texto,260),evento_riesgo:text(r.evento_riesgo,120),evento_riesgo_texto:text(r.evento_riesgo_texto,260),consecuencia:text(r.consecuencia,120),consecuencia_texto:text(r.consecuencia_texto,320),descripcion_peligro:text(r.descripcion_peligro,700),controles_existentes:text(r.controles_existentes,900),
+    probabilidad_inicial:pI,severidad_inicial:sI,riesgo_inicial_valor:ri,riesgo_inicial_texto:riskCategory(ri),
+    cont_eliminar:text(r.cont_eliminar,500),estado_eliminar:r.estado_eliminar==='implementado'?'implementado':'propuesto',cont_sustituir:text(r.cont_sustituir,500),estado_sustituir:r.estado_sustituir==='implementado'?'implementado':'propuesto',cont_ingenieria:text(r.cont_ingenieria,500),estado_ingenieria:r.estado_ingenieria==='implementado'?'implementado':'propuesto',cont_administrativo:text(r.cont_administrativo,500),estado_administrativo:r.estado_administrativo==='implementado'?'implementado':'propuesto',cont_epp:text(r.cont_epp,500),estado_epp:r.estado_epp==='implementado'?'implementado':'propuesto',
+    estado_residual:r.estado_residual==='verificado'?'verificado':'previsto',probabilidad_residual:pR,severidad_residual:sR,riesgo_residual_valor:rr,riesgo_residual_texto:riskCategory(rr),responsable:text(r.responsable,140),fecha_objetivo:text(r.fecha_objetivo,20),observaciones:text(r.observaciones,350)};
+}
+function loadStore(){const raw=safeParse(localStorage.getItem(STORE_KEY),{records:[]});records=Array.isArray(raw?.records)?raw.records.map(normalizeRecord).filter(Boolean).slice(0,5000):[]}
+function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify({version:2,updated_at:new Date().toISOString(),records}))}catch(e){toast('No se pudo guardar en el navegador. Descarga un respaldo.','danger')}}
 
-  update public.catalogos_riesgo_sst
-  set
-    tipo = v_tipo,
-    codigo = v_codigo,
-    nombre = v_nombre,
-    severidad_sugerida = v_severidad,
-    descripcion = v_descripcion,
-    activo = v_activo,
-    orden = v_orden,
-    -- metadata se preserva deliberadamente
-    updated_at = now()
-  where id = v_id;
+// ---------- ACCESO ----------
+$('login-cedula').addEventListener('input',e=>e.target.value=normalizeCedula(e.target.value));$('login-code').addEventListener('input',e=>e.target.value=normalizeCode(e.target.value));
+$('login-form').addEventListener('submit',async e=>{e.preventDefault();showMsg($('login-error'),'');const cedula=normalizeCedula($('login-cedula').value),codigo=normalizeCode($('login-code').value);if(cedula.length<5){showMsg($('login-error'),'Ingresa una cédula válida.');return}if(!/^[A-Z0-9]{5}$/.test(codigo)){showMsg($('login-error'),'El código debe tener exactamente 5 caracteres.');return}if(!sb){showMsg($('login-error'),'No se pudo iniciar Supabase.');return}$('login-btn').disabled=true;try{const {data,error}=await sb.rpc('acceso_integrante',{p_cedula:cedula,p_codigo:codigo});if(error)throw error;let member=null;if(Array.isArray(data)&&data.length)member=data[0];else if(data?.ok&&data?.member)member=data.member;else if(data&&typeof data==='object'&&!Array.isArray(data)&&data.cedula)member=data;if(!member)throw new Error('Acceso no válido');const safe={cedula:normalizeCedula(member.cedula||cedula),nombres:text(member.nombres,80),apellidos:text(member.apellidos,80)};sessionStorage.setItem(SESSION_KEY,JSON.stringify(safe));$('login-code').value='';openApp(safe)}catch(err){showMsg($('login-error'),'Cédula o código no válidos, o no fue posible conectar.');console.error(err)}finally{$('login-btn').disabled=false}});
+$('logout-btn').onclick=()=>{sessionStorage.removeItem(SESSION_KEY);location.reload()};
+function openApp(member){$('auth-gate').classList.add('hidden');$('app-shell').classList.remove('hidden');$('member-name').textContent=[member?.nombres,member?.apellidos].filter(Boolean).join(' ')||'Integrante';loadStore();renderAll();loadCatalogs(false)}
+const existing=safeParse(sessionStorage.getItem(SESSION_KEY),null);if(existing?.cedula)openApp(existing);
 
-  return jsonb_build_object(
-    'ok', true,
-    'accion', 'actualizado',
-    'id', v_id
-  );
+// ---------- NAVEGACIÓN ----------
+function switchView(view){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));$(`view-${view}`)?.classList.add('active');document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='dashboard')updateDashboard();if(view==='matrix')renderMatrix();window.scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('.nav-btn[data-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
 
-exception
-  when unique_violation then
-    raise exception 'Ya existe el código % dentro del catálogo %', v_codigo, v_tipo;
-end;
-$$;
+// ---------- CATÁLOGOS CENTRALIZADOS EN SUPABASE ----------
+const catDefs={
+  elementos:{tipo:'elemento',select:'element'},
+  peligros:{tipo:'peligro',select:'hazard'},
+  energias:{tipo:'energia',select:'energy'},
+  eventos:{tipo:'evento',select:'event'},
+  consecuencias:{tipo:'consecuencia',select:'consequence'}
+};
+function populateCatalogs(){for(const [key,def] of Object.entries(catDefs)){const sel=$(def.select);const current=sel.value;sel.innerHTML='';const op=document.createElement('option');op.value='';op.textContent='Seleccione una opción…';sel.appendChild(op);for(const item of catalogs[key]){const o=document.createElement('option');o.value=item.id;o.textContent=`[${item.id}] - ${item.name}`;sel.appendChild(o)}if([...sel.options].some(o=>o.value===current))sel.value=current;$(`cat-${key}`).textContent=catalogs[key].length}}
+async function loadCatalogs(force=false){
+  $('catalog-status').textContent='Actualizando…';
+  const cached=safeParse(localStorage.getItem(CAT_KEY),null);
+  if(cached?.catalogs&&!force){catalogs=cached.catalogs;populateCatalogs();$('catalog-status').textContent='Caché local'}
+  try{
+    const {data,error}=await sb.rpc('catalogos_riesgo_publicos');
+    if(error)throw error;
+    const next={elementos:[],peligros:[],energias:[],eventos:[],consecuencias:[]};
+    const keyByType={elemento:'elementos',peligro:'peligros',energia:'energias',evento:'eventos',consecuencia:'consecuencias'};
+    for(const row of (data||[])){
+      const key=keyByType[row.tipo]; if(!key)continue;
+      next[key].push({id:text(row.codigo,120),name:text(row.nombre,300),severidad:row.severidad_sugerida?clampInt(row.severidad_sugerida,1,5,0):0});
+    }
+    catalogs=next; populateCatalogs();
+    localStorage.setItem(CAT_KEY,JSON.stringify({updated_at:new Date().toISOString(),catalogs}));
+    const total=Object.values(catalogs).reduce((n,a)=>n+a.length,0);
+    $('catalog-status').textContent=`Supabase · ${total} registros`;
+    toast('Catálogos técnicos actualizados desde Supabase.','success');
+  }catch(err){
+    console.error(err);
+    $('catalog-status').textContent=cached?.catalogs?'Sin conexión · usando caché':'Sin conexión';
+    if(!cached?.catalogs)toast('No fue posible cargar catalogos_riesgo_publicos() desde Supabase.','warning');
+  }
+  restoreDraft();
+}
+$('refresh-catalogs').onclick=()=>loadCatalogs(true);
+$('consequence').addEventListener('change',()=>{const item=catalogs.consecuencias.find(x=>x.id===$('consequence').value);if(item?.severidad){$('s-initial').value=String(item.severidad);updateInitial();toast(`Severidad sugerida por catálogo: ${item.severidad}. Revísala antes de guardar.`,'info')}});
 
--- --------------------------------------------------------------------------
--- 4. ACTIVAR / DESACTIVAR (NO BORRAR)
--- --------------------------------------------------------------------------
-drop function if exists public.catalogos_riesgo_admin_activar(text,text,bigint,boolean);
+// ---------- RIESGO Y CONTROLES ----------
+function setRisk(prefix,score){$(`${prefix}-score`).textContent=score;const cat=riskCategory(score),badge=$(`${prefix}-badge`);badge.textContent=cat;badge.className=`risk-badge ${riskClass(cat)}`}
+function updateInitial(){const p=clampInt($('p-initial').value,1,5,1),s=clampInt($('s-initial').value,1,5,1);setRisk('initial',p*s);if(!$('edit-id').value&&$('p-residual').dataset.touched!=='1'){$('p-residual').value=String(p);$('s-residual').value=String(s);updateResidual()}}
+function updateResidual(){const p=clampInt($('p-residual').value,0,5,1),s=clampInt($('s-residual').value,1,5,1);$('s-residual').disabled=p===0;setRisk('residual',p===0?0:p*s)}
+$('p-initial').onchange=updateInitial;$('s-initial').onchange=updateInitial;$('p-residual').addEventListener('change',()=>{$('p-residual').dataset.touched='1';updateResidual()});$('s-residual').onchange=updateResidual;
+for(const key of controlKeys){$(`c-${key}`).addEventListener('change',()=>{const on=$(`c-${key}`).checked;$(`cf-${key}`).hidden=!on;if(!on){$(`d-${key}`).value='';$(`st-${key}`).value='propuesto'}saveDraft()})}
+function controlData(key){return{checked:$(`c-${key}`).checked,description:text($(`d-${key}`).value,500),status:$(`st-${key}`).value==='implementado'?'implementado':'propuesto'}}
+function implementedCount(r){return [['cont_eliminar','estado_eliminar'],['cont_sustituir','estado_sustituir'],['cont_ingenieria','estado_ingenieria'],['cont_administrativo','estado_administrativo'],['cont_epp','estado_epp']].filter(([d,s])=>r[d]&&r[s]==='implementado').length}
 
-create function public.catalogos_riesgo_admin_activar(
-  p_cedula text,
-  p_codigo text,
-  p_id bigint,
-  p_activo boolean
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_admin_id bigint;
-begin
-  v_admin_id := private.riesgo_catalogos_admin_integrante_id(p_cedula, p_codigo);
+// ---------- BORRADOR ----------
+const draftIds=['area','process','danger-process','job','workers','element','element-desc','hazard','energy','event','consequence','scenario','existing-controls','p-initial','s-initial','residual-state','p-residual','s-residual','responsible','target-date','observations','d-eliminate','st-eliminate','d-substitute','st-substitute','d-engineering','st-engineering','d-administrative','st-administrative','d-ppe','st-ppe'];
+function saveDraft(){if($('edit-id').value)return;const d={};for(const id of draftIds)d[id]=$(id)?.value??'';for(const key of controlKeys)d[`c-${key}`]=$(`c-${key}`).checked;localStorage.setItem(DRAFT_KEY,JSON.stringify(d));$('draft-note').textContent='Borrador guardado localmente.'}
+function restoreDraft(){if($('edit-id').value)return;const d=safeParse(localStorage.getItem(DRAFT_KEY),null);if(!d)return;for(const id of draftIds){if(d[id]!==undefined&&$(id)){if($(id).tagName==='SELECT'&&![...$(id).options].some(o=>o.value===String(d[id])))continue;$(id).value=d[id]}}for(const key of controlKeys){$(`c-${key}`).checked=Boolean(d[`c-${key}`]);$(`cf-${key}`).hidden=!$(`c-${key}`).checked}updateInitial();updateResidual();$('draft-note').textContent='Se recuperó un borrador local.'}
+$('risk-form').addEventListener('input',saveDraft);$('risk-form').addEventListener('change',saveDraft);
 
-  if v_admin_id is null then
-    raise exception 'Acceso administrativo no autorizado';
-  end if;
+function validateForm(){showMsg($('form-error'),'');const form=$('risk-form');if(!form.checkValidity()){form.reportValidity();return false}for(const key of controlKeys){const c=controlData(key);if(c.checked&&!c.description){showMsg($('form-error'),'Describe cada medida de control que marques.');return false}}
+ const pI=clampInt($('p-initial').value,1,5,1),sI=clampInt($('s-initial').value,1,5,1),pR=clampInt($('p-residual').value,0,5,pI),sR=clampInt($('s-residual').value,1,5,sI),initial=pI*sI,residual=pR===0?0:pR*sR;
+ const impl=controlKeys.map(controlData).filter(x=>x.checked&&x.status==='implementado').length;
+ if(pR===0){const elim=controlData('eliminate');if(!elim.checked||elim.status!=='implementado'){showMsg($('form-error'),'Solo usa “0 · Peligro eliminado” si la eliminación está documentada como implementada y verificada.');return false}if($('residual-state').value!=='verificado'){$('residual-state').value='verificado'}}
+ if($('residual-state').value==='verificado'&&residual<initial&&impl===0){showMsg($('form-error'),'Para declarar una reducción residual como “verificada”, registra al menos un control implementado y verificado. Si todavía es una estimación, selecciona “Previsto”.');return false}
+ return true}
+function buildRecord(){const old=records.find(r=>r.id===$('edit-id').value);const c={eliminate:controlData('eliminate'),substitute:controlData('substitute'),engineering:controlData('engineering'),administrative:controlData('administrative'),ppe:controlData('ppe')};return normalizeRecord({id:old?.id||uuid(),created_at:old?.created_at||new Date().toISOString(),updated_at:new Date().toISOString(),legacy_id:old?.legacy_id||'',area:$('area').value,proceso:$('process').value,proceso_peligroso:$('danger-process').value,puesto:$('job').value,trabajadores_expuestos:$('workers').value,elemento_proceso:$('element').value,elemento_proceso_texto:currentOptionText('element'),desc_elemento:$('element-desc').value,tipo_peligro:$('hazard').value,tipo_peligro_texto:currentOptionText('hazard'),energia:$('energy').value,energia_texto:currentOptionText('energy'),evento_riesgo:$('event').value,evento_riesgo_texto:currentOptionText('event'),consecuencia:$('consequence').value,consecuencia_texto:currentOptionText('consequence'),descripcion_peligro:$('scenario').value,controles_existentes:$('existing-controls').value,probabilidad_inicial:$('p-initial').value,severidad_inicial:$('s-initial').value,cont_eliminar:c.eliminate.checked?c.eliminate.description:'',estado_eliminar:c.eliminate.status,cont_sustituir:c.substitute.checked?c.substitute.description:'',estado_sustituir:c.substitute.status,cont_ingenieria:c.engineering.checked?c.engineering.description:'',estado_ingenieria:c.engineering.status,cont_administrativo:c.administrative.checked?c.administrative.description:'',estado_administrativo:c.administrative.status,cont_epp:c.ppe.checked?c.ppe.description:'',estado_epp:c.ppe.status,estado_residual:$('residual-state').value,probabilidad_residual:$('p-residual').value,severidad_residual:$('s-residual').value,responsable:$('responsible').value,fecha_objetivo:$('target-date').value,observaciones:$('observations').value})}
+function saveRecord(goMatrix=false){if(!validateForm())return false;const r=buildRecord(),idx=records.findIndex(x=>x.id===r.id);if(idx>=0)records[idx]=r;else records.push(r);persist();localStorage.removeItem(DRAFT_KEY);toast(idx>=0?'Evaluación actualizada.':'Evaluación guardada.','success');resetForm(true);renderAll();if(goMatrix)switchView('matrix');return true}
+$('risk-form').addEventListener('submit',e=>{e.preventDefault();saveRecord(false)});$('save-view').onclick=()=>saveRecord(true);$('clear-form').onclick=async()=>{if(await confirmBox('Limpiar formulario','Se perderá el borrador actual.'))resetForm(false)};$('cancel-edit').onclick=()=>resetForm(false);
+function resetForm(keepContext=false){const ctx=keepContext?{area:$('area').value,process:$('process').value,danger:$('danger-process').value,job:$('job').value,workers:$('workers').value}:null;$('risk-form').reset();$('edit-id').value='';$('form-title').textContent='Nueva evaluación';$('cancel-edit').classList.add('hidden');$('workers').value=ctx?.workers||'1';if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}for(const key of controlKeys){$(`cf-${key}`).hidden=true;$(`st-${key}`).value='propuesto'}$('p-initial').value='1';$('s-initial').value='1';$('p-residual').value='1';$('p-residual').dataset.touched='';$('s-residual').value='1';$('residual-state').value='previsto';$('s-residual').disabled=false;localStorage.removeItem(DRAFT_KEY);showMsg($('form-error'),'');showMsg($('form-success'),'');$('draft-note').textContent='Autoguardado local del borrador activo.';updateInitial();updateResidual()}
 
-  if p_id is null then
-    raise exception 'ID inválido';
-  end if;
+// ---------- EDITAR / ELIMINAR ----------
+function setSelectValue(id,value){const s=$(id);if([...s.options].some(o=>o.value===String(value)))s.value=String(value);else s.value=''}
+window.editRisk=function(id){const r=records.find(x=>x.id===id);if(!r)return;$('edit-id').value=r.id;$('form-title').textContent='Editar evaluación';$('cancel-edit').classList.remove('hidden');$('area').value=r.area;$('process').value=r.proceso;$('danger-process').value=r.proceso_peligroso;$('job').value=r.puesto;$('workers').value=r.trabajadores_expuestos;setSelectValue('element',r.elemento_proceso);$('element-desc').value=r.desc_elemento;setSelectValue('hazard',r.tipo_peligro);setSelectValue('energy',r.energia);setSelectValue('event',r.evento_riesgo);setSelectValue('consequence',r.consecuencia);$('scenario').value=r.descripcion_peligro;$('existing-controls').value=r.controles_existentes;$('p-initial').value=r.probabilidad_inicial;$('s-initial').value=r.severidad_inicial;const map={eliminate:['cont_eliminar','estado_eliminar'],substitute:['cont_sustituir','estado_sustituir'],engineering:['cont_ingenieria','estado_ingenieria'],administrative:['cont_administrativo','estado_administrativo'],ppe:['cont_epp','estado_epp']};for(const [k,[d,s]] of Object.entries(map)){$(`c-${k}`).checked=Boolean(r[d]);$(`cf-${k}`).hidden=!r[d];$(`d-${k}`).value=r[d]||'';$(`st-${k}`).value=r[s]||'propuesto'}$('residual-state').value=r.estado_residual;$('p-residual').value=r.probabilidad_residual;$('p-residual').dataset.touched='1';$('s-residual').value=r.severidad_residual;$('responsible').value=r.responsable;$('target-date').value=r.fecha_objetivo;$('observations').value=r.observaciones;updateInitial();updateResidual();switchView('evaluate')}
+window.deleteRisk=async function(id){if(!(await confirmBox('Eliminar evaluación','La evaluación se eliminará de este navegador. Esta acción no se puede deshacer.')))return;records=records.filter(x=>x.id!==id);persist();renderAll();toast('Evaluación eliminada.','success')}
 
-  update public.catalogos_riesgo_sst
-  set
-    activo = coalesce(p_activo, false),
-    updated_at = now()
-  where id = p_id;
+// ---------- RENDER ----------
+function filteredRecords(){const q=text($('filter-text')?.value||'',250).toLowerCase(),fi=$('filter-initial')?.value||'',fr=$('filter-residual')?.value||'';return records.filter(r=>{const hay=[r.area,r.proceso,r.proceso_peligroso,r.puesto,r.tipo_peligro_texto,r.descripcion_peligro,r.evento_riesgo_texto,r.consecuencia_texto].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!fi||r.riesgo_inicial_texto===fi)&&(!fr||r.riesgo_residual_texto===fr)})}
+['filter-text','filter-initial','filter-residual'].forEach(id=>$(id).addEventListener(id==='filter-text'?'input':'change',renderMatrix));
+function addText(parent,tag,cls,val){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=val??'';parent.appendChild(e);return e}
+function riskBadgeNode(cat,score){const s=document.createElement('span');s.className=`risk-badge ${riskClass(cat)}`;s.textContent=`${score} · ${cat}`;return s}
+function controlsSummary(r){return [['Eliminación',r.cont_eliminar,r.estado_eliminar],['Sustitución',r.cont_sustituir,r.estado_sustituir],['Ingeniería',r.cont_ingenieria,r.estado_ingenieria],['Administrativo',r.cont_administrativo,r.estado_administrativo],['EPP',r.cont_epp,r.estado_epp]].filter(x=>x[1])}
+function renderMatrix(){const data=filteredRecords();$('matrix-count').textContent=`${data.length} / ${records.length}`;const mobile=$('mobile-records'),tbody=$('risk-tbody');mobile.innerHTML='';tbody.innerHTML='';if(!data.length){const empty=document.createElement('div');empty.className='card card-pad';empty.textContent=records.length?'No hay coincidencias con los filtros.':'Todavía no hay evaluaciones guardadas.';mobile.appendChild(empty);const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent=empty.textContent;td.style.textAlign='center';td.style.padding='28px';tr.appendChild(td);tbody.appendChild(tr);return}
+ for(const r of data){const card=document.createElement('article');card.className='card record-card';const top=document.createElement('div');top.className='record-top';const left=document.createElement('div');addText(left,'h3','record-title',`${r.area} · ${r.proceso}`);addText(left,'div','record-meta',`${r.puesto} · ${r.trabajadores_expuestos} exp.`);top.appendChild(left);top.appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor));card.appendChild(top);const rg=document.createElement('div');rg.className='record-grid';const m1=document.createElement('div');m1.className='mini';addText(m1,'span','', 'Peligro');addText(m1,'strong','',r.tipo_peligro_texto||r.tipo_peligro||'—');const m2=document.createElement('div');m2.className='mini';addText(m2,'span','', 'Inicial');addText(m2,'strong','',`${r.riesgo_inicial_valor} · ${r.riesgo_inicial_texto}`);rg.append(m1,m2);card.appendChild(rg);addText(card,'p','record-desc',r.descripcion_peligro||'Sin descripción de escenario.');const acts=document.createElement('div');acts.className='record-actions';const eb=document.createElement('button');eb.className='btn btn-secondary';eb.type='button';eb.textContent='Editar';eb.onclick=()=>window.editRisk(r.id);const dbtn=document.createElement('button');dbtn.className='btn btn-danger';dbtn.type='button';dbtn.textContent='Eliminar';dbtn.onclick=()=>window.deleteRisk(r.id);acts.append(eb,dbtn);card.appendChild(acts);mobile.appendChild(card);
+   const tr=document.createElement('tr');const cells=[];for(let i=0;i<7;i++){const td=document.createElement('td');cells.push(td);tr.appendChild(td)}addText(cells[0],'strong','',r.area);addText(cells[0],'div','',r.proceso);addText(cells[0],'div','',`${r.puesto} · ${r.trabajadores_expuestos} exp.`);addText(cells[1],'strong','',r.tipo_peligro_texto||r.tipo_peligro);addText(cells[1],'div','',r.elemento_proceso_texto);addText(cells[1],'div','',r.descripcion_peligro);addText(cells[2],'strong','',r.evento_riesgo_texto);addText(cells[2],'div','',r.consecuencia_texto);cells[3].appendChild(riskBadgeNode(r.riesgo_inicial_texto,r.riesgo_inicial_valor));const controls=controlsSummary(r);if(controls.length)for(const [name,desc,status] of controls)addText(cells[4],'div','',`${name} [${status==='implementado'?'verificado':'propuesto'}]: ${desc}`);else addText(cells[4],'div','', 'Sin medidas adicionales registradas');cells[5].appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor));addText(cells[5],'div','',r.estado_residual==='verificado'?'Verificado':'Previsto');cells[6].className='actions';const e2=document.createElement('button');e2.className='btn btn-secondary';e2.type='button';e2.textContent='Editar';e2.onclick=()=>window.editRisk(r.id);const d2=document.createElement('button');d2.className='btn btn-danger';d2.type='button';d2.textContent='×';d2.onclick=()=>window.deleteRisk(r.id);cells[6].append(e2,d2);tbody.appendChild(tr)}
+}
+function buildHeatmap(){const h=$('heatmap');h.innerHTML='';addText(h,'div','hm-head','Severidad ↓ / Probabilidad →');for(let p=1;p<=5;p++)addText(h,'div','hm-head',`${p}`);for(let s=5;s>=1;s--){addText(h,'div','hm-side',`${s} · ${['','Menor','Leve','Moderado','Grave','Catastrófico'][s]}`);for(let p=1;p<=5;p++){const score=p*s,cat=riskCategory(score),c=document.createElement('div');c.className=`hm-cell ${riskClass(cat)}`;c.dataset.p=p;c.dataset.s=s;addText(c,'span','',`${score} · ${cat}`);addText(c,'span','hm-count','0 registros');h.appendChild(c)}}}
+function updateDashboard(){$('stat-total').textContent=records.length;$('stat-critical').textContent=records.filter(r=>r.riesgo_residual_valor>=9).length;$('stat-controls').textContent=records.reduce((a,r)=>a+implementedCount(r),0);$('stat-reduced').textContent=records.filter(r=>riskRank(r.riesgo_residual_texto)<riskRank(r.riesgo_inicial_texto)).length;document.querySelectorAll('.hm-cell').forEach(c=>{const p=Number(c.dataset.p),s=Number(c.dataset.s),n=records.filter(r=>r.probabilidad_residual===p&&r.severidad_residual===s).length;c.querySelector('.hm-count').textContent=`${n} registro${n===1?'':'s'}`});const alerts=$('alerts');alerts.innerHTML='';const critical=records.filter(r=>r.riesgo_residual_valor>=9).sort((a,b)=>b.riesgo_residual_valor-a.riesgo_residual_valor);if(!critical.length)addText(alerts,'div','record-desc','No hay riesgos residuales altos o muy altos.');else for(const r of critical){const d=document.createElement('div');d.className=`alert-item ${r.riesgo_residual_valor>=16?'very':''}`;addText(d,'strong','',`${r.riesgo_residual_valor} · ${r.riesgo_residual_texto} · ${r.area}`);addText(d,'p','',`${r.tipo_peligro_texto||r.tipo_peligro} — ${r.puesto}`);alerts.appendChild(d)}renderCharts()}
+function renderCharts(){if(!window.Chart)return;const riskCounts={Eliminado:0,Bajo:0,Medio:0,Alto:0,'Muy Alto':0};records.forEach(r=>riskCounts[r.riesgo_residual_texto]=(riskCounts[r.riesgo_residual_texto]||0)+1);if(chartRisk)chartRisk.destroy();chartRisk=new Chart($('chart-risk'),{type:'doughnut',data:{labels:Object.keys(riskCounts),datasets:[{data:Object.values(riskCounts)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});const areas={};records.forEach(r=>areas[r.area||'Sin área']=(areas[r.area||'Sin área']||0)+1);if(chartArea)chartArea.destroy();chartArea=new Chart($('chart-area'),{type:'bar',data:{labels:Object.keys(areas),datasets:[{label:'Evaluaciones',data:Object.values(areas)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}})}
+function renderAll(){renderMatrix();updateDashboard()}
+buildHeatmap();
 
-  if not found then
-    raise exception 'Registro no encontrado';
-  end if;
+// ---------- JSON ----------
+function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+$('json-backup').onclick=backupJSON;function backupJSON(){const payload={app:'La Movida SST Plus · Matriz de Riesgos',version:2,exported_at:new Date().toISOString(),records,catalog_cache:catalogs};downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),`respaldo_matriz_riesgos_${new Date().toISOString().slice(0,10)}.json`);toast('Respaldo JSON descargado.','success')}
+$('json-restore-btn').onclick=()=>$('json-file').click();$('json-file').addEventListener('change',async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;if(f.size>10*1024*1024){toast('El JSON supera 10 MB.','danger');return}try{const obj=JSON.parse(await f.text());const arr=Array.isArray(obj?.records)?obj.records:[];const normalized=arr.map(normalizeRecord).filter(Boolean);if(!(await confirmBox('Restaurar respaldo',`Se reemplazarán los ${records.length} registros locales por ${normalized.length} registros del archivo.`)))return;records=normalized;persist();renderAll();toast('Respaldo restaurado.','success')}catch(err){toast('No se pudo leer el respaldo JSON.','danger')}});
 
-  return jsonb_build_object(
-    'ok', true,
-    'id', p_id,
-    'activo', coalesce(p_activo, false)
-  );
-end;
-$$;
+// ---------- EXCEL ----------
+const excelHeaders=['ID','Sede / Área','Proceso de Trabajo','Proceso Peligroso (NT-04)','Puesto de Trabajo','N° Trabajadores Expuestos','Elemento ID','Elemento','Descripción Elemento','Peligro ID','Tipo de Peligro','Energía ID','Energía / Fuente','Evento ID','Evento no deseado','Consecuencia ID','Consecuencia / Daño','Escenario','Controles Existentes','Probabilidad Inicial','Severidad Inicial','Riesgo Inicial','Eliminación','Estado Eliminación','Sustitución','Estado Sustitución','Ingeniería','Estado Ingeniería','Administrativo','Estado Administrativo','EPP','Estado EPP','Estado Residual','Probabilidad Residual','Severidad Residual','Riesgo Residual','Responsable','Fecha Objetivo','Observaciones'];
+function excelRow(r){return[r.id,r.area,r.proceso,r.proceso_peligroso,r.puesto,r.trabajadores_expuestos,r.elemento_proceso,r.elemento_proceso_texto,r.desc_elemento,r.tipo_peligro,r.tipo_peligro_texto,r.energia,r.energia_texto,r.evento_riesgo,r.evento_riesgo_texto,r.consecuencia,r.consecuencia_texto,r.descripcion_peligro,r.controles_existentes,r.probabilidad_inicial,r.severidad_inicial,`${r.riesgo_inicial_valor} · ${r.riesgo_inicial_texto}`,r.cont_eliminar,r.estado_eliminar,r.cont_sustituir,r.estado_sustituir,r.cont_ingenieria,r.estado_ingenieria,r.cont_administrativo,r.estado_administrativo,r.cont_epp,r.estado_epp,r.estado_residual,r.probabilidad_residual,r.severidad_residual,`${r.riesgo_residual_valor} · ${r.riesgo_residual_texto}`,r.responsable,r.fecha_objetivo,r.observaciones]}
+async function createWorkbook(includeData=true){const wb=new ExcelJS.Workbook();wb.creator='La Movida SST Plus';const info=wb.addWorksheet('Leer primero');info.addRows([['MATRIZ DE RIESGOS SST · LA MOVIDA SST PLUS'],['Uso','Esta plantilla apoya la identificación de peligros y evaluación de riesgos. La matriz 5x5 y sus umbrales son convenciones de la herramienta.'],['Importación','Conserva los encabezados. Probabilidad y severidad usan 1 a 5; probabilidad residual 0 solo cuando el peligro fue eliminado y verificado.'],['Estado de controles','Usa propuesto o implementado.'],['Referencias','ISO 45002:2023 como guía de implementación de ISO 45001; NT-04-2023 cuando corresponda al contexto venezolano.']]);info.getColumn(1).width=24;info.getColumn(2).width=100;const ws=wb.addWorksheet('Matriz_IPERC');ws.addRow(excelHeaders);ws.getRow(1).font={bold:true,color:{argb:'FFFFFFFF'}};ws.getRow(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B2A6F'}};ws.views=[{state:'frozen',ySplit:1}];excelHeaders.forEach((h,i)=>ws.getColumn(i+1).width=Math.min(42,Math.max(12,h.length+3)));if(includeData)records.forEach(r=>ws.addRow(excelRow(r)));else ws.addRow(['','Planta Norte','Mantenimiento','Trabajo en altura','Técnico',4,'','','Andamio tubular','','Peligro mecánico','','Energía potencial','','Caída a distinto nivel','','Fractura grave','Trabajo a 6 m durante mantenimiento','Inspección previa y barandas existentes',3,4,'','','','','','Línea de vida certificada','propuesto','','','','','previsto',2,4,'','Supervisor SST','','Ejemplo: revisar antes de importar']);const cat=wb.addWorksheet('Catalogos');let col=1;for(const [k,arr] of Object.entries(catalogs)){cat.getCell(1,col).value=k;cat.getCell(1,col).font={bold:true};arr.forEach((x,i)=>cat.getCell(i+2,col).value=`${x.id} | ${x.name}`);cat.getColumn(col).width=45;col++}return wb}
+$('excel-export').onclick=async()=>{if(!window.ExcelJS){toast('ExcelJS no está disponible.','danger');return}const wb=await createWorkbook(true);const buf=await wb.xlsx.writeBuffer();downloadBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Matriz_Riesgos_SST_${new Date().toISOString().slice(0,10)}.xlsx`);toast('Excel descargado.','success')};
+$('excel-template').onclick=async()=>{const wb=await createWorkbook(false);const buf=await wb.xlsx.writeBuffer();downloadBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Plantilla_Matriz_Riesgos_SST.xlsx');toast('Plantilla Excel descargada.','success')};
+$('excel-import-btn').onclick=()=>$('excel-file').click();$('excel-file').addEventListener('change',async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;if(f.size>10*1024*1024){toast('El Excel supera 10 MB.','danger');return}try{const wb=new ExcelJS.Workbook();await wb.xlsx.load(await f.arrayBuffer());const ws=wb.getWorksheet('Matriz_IPERC')||wb.worksheets.find(x=>x.name!=='Leer primero'&&x.name!=='Catalogos');if(!ws)throw new Error('No hay hoja válida');const headerMap={};ws.getRow(1).eachCell((cell,col)=>headerMap[text(cell.value,120)]=col);const val=(row,name)=>{const col=headerMap[name];if(!col)return'';const v=row.getCell(col).value;return v&&typeof v==='object'&&'text'in v?v.text:v??''};const imported=[];for(let i=2;i<=ws.rowCount;i++){const row=ws.getRow(i);const area=text(val(row,'Sede / Área'),120),proceso=text(val(row,'Proceso de Trabajo'),150),puesto=text(val(row,'Puesto de Trabajo'),140);if(!area&&!proceso&&!puesto)continue;if(!area||!proceso||!puesto)continue;const pI=clampInt(val(row,'Probabilidad Inicial'),1,5,1),sI=clampInt(val(row,'Severidad Inicial'),1,5,1),pR=clampInt(val(row,'Probabilidad Residual'),0,5,pI),sR=clampInt(val(row,'Severidad Residual'),1,5,sI);imported.push(normalizeRecord({id:text(val(row,'ID'),120)||uuid(),area,proceso,proceso_peligroso:val(row,'Proceso Peligroso (NT-04)'),puesto,trabajadores_expuestos:val(row,'N° Trabajadores Expuestos'),elemento_proceso:val(row,'Elemento ID'),elemento_proceso_texto:val(row,'Elemento'),desc_elemento:val(row,'Descripción Elemento'),tipo_peligro:val(row,'Peligro ID'),tipo_peligro_texto:val(row,'Tipo de Peligro'),energia:val(row,'Energía ID'),energia_texto:val(row,'Energía / Fuente'),evento_riesgo:val(row,'Evento ID'),evento_riesgo_texto:val(row,'Evento no deseado'),consecuencia:val(row,'Consecuencia ID'),consecuencia_texto:val(row,'Consecuencia / Daño'),descripcion_peligro:val(row,'Escenario'),controles_existentes:val(row,'Controles Existentes'),probabilidad_inicial:pI,severidad_inicial:sI,cont_eliminar:val(row,'Eliminación'),estado_eliminar:val(row,'Estado Eliminación'),cont_sustituir:val(row,'Sustitución'),estado_sustituir:val(row,'Estado Sustitución'),cont_ingenieria:val(row,'Ingeniería'),estado_ingenieria:val(row,'Estado Ingeniería'),cont_administrativo:val(row,'Administrativo'),estado_administrativo:val(row,'Estado Administrativo'),cont_epp:val(row,'EPP'),estado_epp:val(row,'Estado EPP'),estado_residual:val(row,'Estado Residual'),probabilidad_residual:pR,severidad_residual:sR,responsable:val(row,'Responsable'),fecha_objetivo:val(row,'Fecha Objetivo'),observaciones:val(row,'Observaciones')}))}if(!imported.length){toast('No se encontraron filas válidas.','warning');return}if(!(await confirmBox('Importar Excel',`Se agregarán ${imported.length} evaluaciones a los datos locales actuales.`)))return;const byId=new Map(records.map(r=>[r.id,r]));imported.forEach(r=>byId.set(r.id,r));records=[...byId.values()];persist();renderAll();toast(`${imported.length} evaluaciones importadas.`,'success')}catch(err){console.error(err);toast('No se pudo importar el Excel. Verifica la plantilla.','danger')}});
 
--- --------------------------------------------------------------------------
--- 5. PERMISOS
--- --------------------------------------------------------------------------
--- La tabla continúa completamente cerrada al navegador.
-revoke all on table public.catalogos_riesgo_sst
-  from public, anon, authenticated;
+// ---------- PDF ----------
+$('pdf-export').onclick=()=>{if(!window.jspdf?.jsPDF){toast('jsPDF no está disponible.','danger');return}const {jsPDF}=window.jspdf,doc=new jsPDF('landscape','pt','a4');doc.setFontSize(16);doc.setTextColor(11,42,111);doc.text('Matriz de Riesgos SST · La Movida SST Plus',36,34);doc.setFontSize(8);doc.setTextColor(90);doc.text('Matriz 5x5: convención de la herramienta. ISO 45002:2023 utilizada como referencia de gestión.',36,49);const body=records.map(r=>[r.area,r.proceso,r.puesto,r.tipo_peligro_texto||r.tipo_peligro,r.evento_riesgo_texto,r.consecuencia_texto,`${r.riesgo_inicial_valor} ${r.riesgo_inicial_texto}`,controlsSummary(r).map(x=>`${x[0]}: ${x[1]}`).join('\n')||'—',`${r.riesgo_residual_valor} ${r.riesgo_residual_texto}\n${r.estado_residual}`]);doc.autoTable({startY:62,head:[['Área','Proceso','Puesto','Peligro','Evento','Consecuencia','Inicial','Controles','Residual']],body,styles:{fontSize:6.5,cellPadding:3,valign:'top'},headStyles:{fillColor:[11,42,111]},columnStyles:{7:{cellWidth:160}}});doc.save(`Matriz_Riesgos_SST_${new Date().toISOString().slice(0,10)}.pdf`)};$('print-btn').onclick=()=>window.print();
 
-grant all on table public.catalogos_riesgo_sst to service_role;
+$('clear-data').onclick=async()=>{if(!(await confirmBox('Borrar datos locales','Se eliminarán todas las evaluaciones guardadas en este navegador. Descarga un respaldo antes si necesitas conservarlas.')))return;records=[];persist();localStorage.removeItem(DRAFT_KEY);renderAll();resetForm(false);toast('Datos locales eliminados.','success')};
 
--- RPC administrativas: invocables desde frontend, pero cada una
--- valida las credenciales y el rol administrativo antes de operar.
-revoke all on function public.catalogos_riesgo_admin_listar(text,text)
-  from public, anon, authenticated;
-
-revoke all on function public.catalogos_riesgo_admin_guardar(text,text,jsonb)
-  from public, anon, authenticated;
-
-revoke all on function public.catalogos_riesgo_admin_activar(text,text,bigint,boolean)
-  from public, anon, authenticated;
-
-grant execute on function public.catalogos_riesgo_admin_listar(text,text)
-  to anon, authenticated;
-
-grant execute on function public.catalogos_riesgo_admin_guardar(text,text,jsonb)
-  to anon, authenticated;
-
-grant execute on function public.catalogos_riesgo_admin_activar(text,text,bigint,boolean)
-  to anon, authenticated;
-
--- La RPC pública de lectura sigue disponible.
-grant execute on function public.catalogos_riesgo_publicos()
-  to anon, authenticated;
-
-notify pgrst, 'reload schema';
-
-commit;
-
--- ============================================================================
--- VERIFICACIÓN
--- Esperado:
--- tabla cerrada = false / false
--- RPC admin = true / true / true
--- RPC pública = true
--- ============================================================================
-
-select
-  has_table_privilege('anon','public.catalogos_riesgo_sst','select')
-    as anon_puede_leer_tabla,
-  has_table_privilege('anon','public.catalogos_riesgo_sst','insert')
-    as anon_puede_insertar_tabla,
-  has_function_privilege(
-    'anon',
-    'public.catalogos_riesgo_admin_listar(text,text)',
-    'execute'
-  ) as admin_listar_ok,
-  has_function_privilege(
-    'anon',
-    'public.catalogos_riesgo_admin_guardar(text,text,jsonb)',
-    'execute'
-  ) as admin_guardar_ok,
-  has_function_privilege(
-    'anon',
-    'public.catalogos_riesgo_admin_activar(text,text,bigint,boolean)',
-    'execute'
-  ) as admin_activar_ok,
-  has_function_privilege(
-    'anon',
-    'public.catalogos_riesgo_publicos()',
-    'execute'
-  ) as rpc_publica_ok;
-
-select tipo, count(*) as registros, count(*) filter (where activo) as activos
-from public.catalogos_riesgo_sst
-group by tipo
-order by tipo;
+// Inicio visual
+updateInitial();updateResidual();renderAll();
+</script>
+</body>
+</html>
