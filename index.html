@@ -77,7 +77,7 @@
         <div><strong style="color:#0B2A6F">La Movida SST Plus</strong><br><span style="font-size:.72rem;color:#006D8F;font-weight:900">De la reacción a la prevención</span></div>
       </div>
       <h1>Matriz de Riesgos SST</h1>
-      <p>Acceso para integrantes registrados. Tus evaluaciones se guardan localmente en este navegador y los catálogos técnicos se consultan desde Supabase.</p>
+      <p>Acceso para integrantes registrados. Tus evaluaciones se sincronizan de forma privada con tu cuenta en Supabase; el navegador conserva únicamente caché y borradores para mejorar la continuidad de trabajo.</p>
       <form id="login-form" novalidate>
         <div class="field"><label for="login-cedula">Cédula</label><input id="login-cedula" class="input" type="text" inputmode="numeric" autocomplete="username" placeholder="Ej. 13534591" maxlength="15"></div>
         <div class="field"><label for="login-code">Código de registro</label><input id="login-code" class="input" type="password" autocomplete="current-password" placeholder="5 caracteres" maxlength="5"></div>
@@ -119,7 +119,7 @@
 
       <section id="view-dashboard" class="section active">
         <div class="stats-grid">
-          <div class="card stat"><div class="stat-label">Evaluaciones</div><div id="stat-total" class="stat-value">0</div><div class="stat-note">Registros locales</div></div>
+          <div class="card stat"><div class="stat-label">Evaluaciones</div><div id="stat-total" class="stat-value">0</div><div class="stat-note">Registros de tu cuenta</div></div>
           <div class="card stat"><div class="stat-label">Residual alto / muy alto</div><div id="stat-critical" class="stat-value" style="color:#b42318">0</div><div class="stat-note">Prioridad de tratamiento</div></div>
           <div class="card stat"><div class="stat-label">Controles implementados</div><div id="stat-controls" class="stat-value" style="color:#2f7d32">0</div><div class="stat-note">Declarados como verificados</div></div>
           <div class="card stat"><div class="stat-label">Reducción de categoría</div><div id="stat-reduced" class="stat-value">0</div><div class="stat-note">Inicial → residual</div></div>
@@ -214,7 +214,7 @@
       </section>
 
       <section id="view-matrix" class="section">
-        <div class="section-head"><div><h2 class="section-title">Matriz de riesgos</h2><p class="section-sub">Registros guardados en este navegador. En móvil se muestran como tarjetas; en escritorio, como tabla.</p></div><span id="matrix-count" class="count-pill">0</span></div>
+        <div class="section-head"><div><h2 class="section-title">Matriz de riesgos</h2><p class="section-sub">Evaluaciones sincronizadas con tu cuenta. En móvil se muestran como tarjetas; en escritorio, como tabla.</p></div><span id="matrix-count" class="count-pill">0</span></div>
         <div class="toolbar no-print"><div class="toolbar-actions"><button id="excel-export" class="btn btn-green" type="button">Excel</button><button id="pdf-export" class="btn btn-danger" type="button">PDF</button><button id="print-btn" class="btn btn-secondary" type="button">Imprimir</button></div><div class="toolbar-actions"><button id="json-backup" class="btn btn-soft" type="button">Respaldo JSON</button></div></div>
         <div class="filters no-print"><input id="filter-text" class="input" type="search" placeholder="Buscar área, proceso, puesto, peligro…"><select id="filter-initial" class="select"><option value="">Riesgo inicial · todos</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Muy Alto</option></select><select id="filter-residual" class="select"><option value="">Riesgo residual · todos</option><option>Eliminado</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Muy Alto</option></select></div>
         <div id="mobile-records" class="mobile-records"></div>
@@ -230,10 +230,10 @@
           <button id="excel-template" class="btn btn-green" type="button">Plantilla Excel</button>
           <button id="excel-import-btn" class="btn btn-secondary" type="button">Importar Excel</button>
           <button id="json-restore-btn" class="btn btn-secondary" type="button">Restaurar JSON</button>
-          <button id="clear-data" class="btn btn-danger" type="button">Borrar datos locales</button>
+          <button id="clear-data" class="btn btn-danger" type="button">Limpiar caché local</button>
         </div>
         <input id="excel-file" type="file" accept=".xlsx" class="hidden"><input id="json-file" type="file" accept="application/json,.json" class="hidden">
-        <div class="storage-box"><h3>Dónde se guardan tus evaluaciones</h3><p>Los registros se almacenan en <strong>localStorage</strong> del navegador. Cerrar normalmente la pestaña no los borra, pero sí puedes perderlos al limpiar datos del sitio, usar navegación privada, cambiar de navegador/dispositivo o por políticas del navegador. Descarga periódicamente Excel o JSON. El JSON sirve para restaurar exactamente el estado de esta herramienta.</p></div>
+        <div class="storage-box"><h3>Dónde se guardan tus evaluaciones</h3><p>Las evaluaciones definitivas se guardan en <strong>Supabase</strong> asociadas a tu cuenta. El navegador mantiene una caché por integrante y el borrador activo para facilitar continuidad y recuperación. Cambiar de dispositivo ya no implica perder las evaluaciones sincronizadas. Excel y JSON continúan disponibles como respaldo y portabilidad.</p></div>
         <div class="storage-box"><h3>Catálogos centralizados en Supabase</h3><p>La aplicación ya no depende de Firebase. El navegador consulta únicamente <code>catalogos_riesgo_publicos()</code>; la tabla base no tiene lectura ni escritura directa para <code>anon</code> o <code>authenticated</code>. Para cambiar los catálogos se utiliza una operación administrativa controlada.</p></div>
         <div class="storage-box"><h3>Administración técnica</h3><p>El botón <strong>Administrar catálogos</strong> abre <code>catalogos-admin.html</code> en esta misma pestaña. El panel exige credenciales de un administrador general y permite crear, editar, ordenar, activar o desactivar registros sin modificar SQL.</p></div>
       </section>
@@ -255,11 +255,11 @@ const sb=window.supabase?.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{au
 
 
 const LOGO='https://drive.google.com/thumbnail?id=1MjVa3JxeKC95xEdlcZ5ZFMCKlatbrU2s&sz=w300';
-const STORE_KEY='movida_riesgos_sst_v2'; const DRAFT_KEY='movida_riesgos_draft_v2'; const CAT_KEY='movida_riesgos_catalogos_v2'; const SESSION_KEY='movida_riesgos_access_v1';
+const LEGACY_STORE_KEY='movida_riesgos_sst_v2'; const STORE_PREFIX='movida_riesgos_sst_v3_'; const DRAFT_PREFIX='movida_riesgos_draft_v3_'; const CAT_KEY='movida_riesgos_catalogos_v2'; const SESSION_KEY='movida_riesgos_access_v2';
 const $=id=>document.getElementById(id);
 const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const controlKeys=['eliminate','substitute','engineering','administrative','ppe'];
-let records=[]; let catalogs={elementos:[],peligros:[],energias:[],eventos:[],consecuencias:[]}; let chartRisk=null,chartArea=null; let pendingConfirm=null;
+let records=[]; let catalogs={elementos:[],peligros:[],energias:[],eventos:[],consecuencias:[]}; let chartRisk=null,chartArea=null; let pendingConfirm=null; let currentSession=null; let cloudSyncing=false;
 
 function safeParse(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch{return fallback}}
 function clampInt(v,min,max,def=min){const n=parseInt(v,10);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):def}
@@ -287,15 +287,51 @@ function normalizeRecord(r){
     cont_eliminar:text(r.cont_eliminar,500),estado_eliminar:r.estado_eliminar==='implementado'?'implementado':'propuesto',cont_sustituir:text(r.cont_sustituir,500),estado_sustituir:r.estado_sustituir==='implementado'?'implementado':'propuesto',cont_ingenieria:text(r.cont_ingenieria,500),estado_ingenieria:r.estado_ingenieria==='implementado'?'implementado':'propuesto',cont_administrativo:text(r.cont_administrativo,500),estado_administrativo:r.estado_administrativo==='implementado'?'implementado':'propuesto',cont_epp:text(r.cont_epp,500),estado_epp:r.estado_epp==='implementado'?'implementado':'propuesto',
     estado_residual:r.estado_residual==='verificado'?'verificado':'previsto',probabilidad_residual:pR,severidad_residual:sR,riesgo_residual_valor:rr,riesgo_residual_texto:riskCategory(rr),responsable:text(r.responsable,140),fecha_objetivo:text(r.fecha_objetivo,20),observaciones:text(r.observaciones,350)};
 }
-function loadStore(){const raw=safeParse(localStorage.getItem(STORE_KEY),{records:[]});records=Array.isArray(raw?.records)?raw.records.map(normalizeRecord).filter(Boolean).slice(0,5000):[]}
-function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify({version:2,updated_at:new Date().toISOString(),records}))}catch(e){toast('No se pudo guardar en el navegador. Descarga un respaldo.','danger')}}
+function storeKey(){const id=currentSession?.perfil?.integrante_id;return id?`${STORE_PREFIX}${id}`:null}
+function draftKey(){const id=currentSession?.perfil?.integrante_id;return id?`${DRAFT_PREFIX}${id}`:null}
+function loadStore(){const key=storeKey();if(!key){records=[];return}const raw=safeParse(localStorage.getItem(key),{records:[]});records=Array.isArray(raw?.records)?raw.records.map(normalizeRecord).filter(Boolean).slice(0,5000):[]}
+function persist(){const key=storeKey();if(!key)return;try{localStorage.setItem(key,JSON.stringify({version:3,updated_at:new Date().toISOString(),records}))}catch(e){toast('No se pudo actualizar la caché local. Tus datos sincronizados en Supabase no se ven afectados.','warning')}}
+async function ppRpc(name,args){if(!sb)throw new Error('Supabase no disponible');const {data,error}=await sb.rpc(name,args);if(error)throw error;if(data?.ok===false)throw new Error(data?.message||'Operación no disponible');return data}
+async function saveCloudRecord(r){if(!currentSession?.token)throw new Error('Sesión no disponible');return ppRpc('pp_guardar_evaluacion',{p_token:currentSession.token,p_record:r})}
+async function deleteCloudRecord(id){if(!currentSession?.token)throw new Error('Sesión no disponible');return ppRpc('pp_eliminar_evaluacion',{p_token:currentSession.token,p_record_id:id})}
+async function fetchCloudRecords(){if(!currentSession?.token)return[];const data=await ppRpc('pp_listar_evaluaciones',{p_token:currentSession.token});return Array.isArray(data?.records)?data.records.map(normalizeRecord).filter(Boolean):[]}
+async function syncFromCloud(){
+  if(cloudSyncing||!currentSession?.token)return;
+  cloudSyncing=true;
+  try{
+    let cloud=await fetchCloudRecords();
+    const cloudById=new Map(cloud.map(r=>[r.id,r]));
+    const pending=records.filter(r=>{const cr=cloudById.get(r.id);return !cr||String(r.updated_at||'')>String(cr.updated_at||'')});
+    for(const r of pending)await saveCloudRecord(r);
+
+    const legacy=safeParse(localStorage.getItem(LEGACY_STORE_KEY),null);
+    const legacyRecords=Array.isArray(legacy?.records)?legacy.records.map(normalizeRecord).filter(Boolean):[];
+    if(legacyRecords.length){
+      const migrate=await confirmBox('Evaluaciones locales encontradas',`Se encontraron ${legacyRecords.length} evaluaciones de la versión anterior. ¿Deseas asociarlas a esta cuenta y subirlas a Supabase?`);
+      if(migrate){
+        for(const r of legacyRecords)await saveCloudRecord(r);
+        localStorage.removeItem(LEGACY_STORE_KEY);
+        toast('Evaluaciones locales migradas a tu cuenta.','success');
+      }
+    }
+
+    cloud=await fetchCloudRecords();
+    records=cloud;
+    persist();
+    renderAll();
+    toast('Evaluaciones sincronizadas con Supabase.','success');
+  }catch(err){
+    console.error(err);
+    toast('No fue posible sincronizar ahora. Se mantiene la caché local.','warning');
+  }finally{cloudSyncing=false}
+}
 
 // ---------- ACCESO ----------
 $('login-cedula').addEventListener('input',e=>e.target.value=normalizeCedula(e.target.value));$('login-code').addEventListener('input',e=>e.target.value=normalizeCode(e.target.value));
-$('login-form').addEventListener('submit',async e=>{e.preventDefault();showMsg($('login-error'),'');const cedula=normalizeCedula($('login-cedula').value),codigo=normalizeCode($('login-code').value);if(cedula.length<5){showMsg($('login-error'),'Ingresa una cédula válida.');return}if(!/^[A-Z0-9]{5}$/.test(codigo)){showMsg($('login-error'),'El código debe tener exactamente 5 caracteres.');return}if(!sb){showMsg($('login-error'),'No se pudo iniciar Supabase.');return}$('login-btn').disabled=true;try{const {data,error}=await sb.rpc('acceso_integrante',{p_cedula:cedula,p_codigo:codigo});if(error)throw error;let member=null;if(Array.isArray(data)&&data.length)member=data[0];else if(data?.ok&&data?.member)member=data.member;else if(data&&typeof data==='object'&&!Array.isArray(data)&&data.cedula)member=data;if(!member)throw new Error('Acceso no válido');const safe={cedula:normalizeCedula(member.cedula||cedula),nombres:text(member.nombres,80),apellidos:text(member.apellidos,80)};sessionStorage.setItem(SESSION_KEY,JSON.stringify(safe));$('login-code').value='';openApp(safe)}catch(err){showMsg($('login-error'),'Cédula o código no válidos, o no fue posible conectar.');console.error(err)}finally{$('login-btn').disabled=false}});
-$('logout-btn').onclick=()=>{sessionStorage.removeItem(SESSION_KEY);location.reload()};
-function openApp(member){$('auth-gate').classList.add('hidden');$('app-shell').classList.remove('hidden');$('member-name').textContent=[member?.nombres,member?.apellidos].filter(Boolean).join(' ')||'Integrante';loadStore();renderAll();loadCatalogs(false)}
-const existing=safeParse(sessionStorage.getItem(SESSION_KEY),null);if(existing?.cedula)openApp(existing);
+$('login-form').addEventListener('submit',async e=>{e.preventDefault();showMsg($('login-error'),'');const documento=normalizeCedula($('login-cedula').value),codigo=normalizeCode($('login-code').value);if(documento.length<5){showMsg($('login-error'),'Ingresa un documento válido.');return}if(!/^[A-Z0-9]{5}$/.test(codigo)){showMsg($('login-error'),'El código debe tener exactamente 5 caracteres.');return}if(!sb){showMsg($('login-error'),'No se pudo iniciar Supabase.');return}$('login-btn').disabled=true;try{const {data,error}=await sb.rpc('pp_login',{p_documento:documento,p_codigo:codigo});if(error)throw error;if(!data?.ok||!data?.token||!data?.perfil?.integrante_id)throw new Error(data?.message||'Acceso no válido');currentSession={token:data.token,expires_at:data.expires_at,perfil:data.perfil};sessionStorage.setItem(SESSION_KEY,JSON.stringify(currentSession));$('login-code').value='';openApp(currentSession)}catch(err){showMsg($('login-error'),err?.message||'Cédula o código no válidos, o no fue posible conectar.');console.error(err)}finally{$('login-btn').disabled=false}});
+$('logout-btn').onclick=async()=>{try{if(currentSession?.token)await sb.rpc('pp_logout',{p_token:currentSession.token})}catch(e){}sessionStorage.removeItem(SESSION_KEY);location.reload()};
+function openApp(session){currentSession=session;$('auth-gate').classList.add('hidden');$('app-shell').classList.remove('hidden');$('member-name').textContent=session?.perfil?.nombre||'Integrante';loadStore();renderAll();loadCatalogs(false);syncFromCloud()}
+const existing=safeParse(sessionStorage.getItem(SESSION_KEY),null);if(existing?.token&&existing?.perfil?.integrante_id)openApp(existing);
 
 // ---------- NAVEGACIÓN ----------
 function switchView(view){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));$(`view-${view}`)?.classList.add('active');document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='dashboard')updateDashboard();if(view==='matrix')renderMatrix();window.scrollTo({top:0,behavior:'smooth'})}
@@ -349,8 +385,8 @@ function implementedCount(r){return [['cont_eliminar','estado_eliminar'],['cont_
 
 // ---------- BORRADOR ----------
 const draftIds=['area','process','danger-process','job','workers','element','element-desc','hazard','energy','event','consequence','scenario','existing-controls','p-initial','s-initial','residual-state','p-residual','s-residual','responsible','target-date','observations','d-eliminate','st-eliminate','d-substitute','st-substitute','d-engineering','st-engineering','d-administrative','st-administrative','d-ppe','st-ppe'];
-function saveDraft(){if($('edit-id').value)return;const d={};for(const id of draftIds)d[id]=$(id)?.value??'';for(const key of controlKeys)d[`c-${key}`]=$(`c-${key}`).checked;localStorage.setItem(DRAFT_KEY,JSON.stringify(d));$('draft-note').textContent='Borrador guardado localmente.'}
-function restoreDraft(){if($('edit-id').value)return;const d=safeParse(localStorage.getItem(DRAFT_KEY),null);if(!d)return;for(const id of draftIds){if(d[id]!==undefined&&$(id)){if($(id).tagName==='SELECT'&&![...$(id).options].some(o=>o.value===String(d[id])))continue;$(id).value=d[id]}}for(const key of controlKeys){$(`c-${key}`).checked=Boolean(d[`c-${key}`]);$(`cf-${key}`).hidden=!$(`c-${key}`).checked}updateInitial();updateResidual();$('draft-note').textContent='Se recuperó un borrador local.'}
+function saveDraft(){if($('edit-id').value)return;const key=draftKey();if(!key)return;const d={};for(const id of draftIds)d[id]=$(id)?.value??'';for(const k of controlKeys)d[`c-${k}`]=$(`c-${k}`).checked;localStorage.setItem(key,JSON.stringify(d));$('draft-note').textContent='Borrador guardado localmente.'}
+function restoreDraft(){if($('edit-id').value)return;const key=draftKey();if(!key)return;const d=safeParse(localStorage.getItem(key),null);if(!d)return;for(const id of draftIds){if(d[id]!==undefined&&$(id)){if($(id).tagName==='SELECT'&&![...$(id).options].some(o=>o.value===String(d[id])))continue;$(id).value=d[id]}}for(const k of controlKeys){$(`c-${k}`).checked=Boolean(d[`c-${k}`]);$(`cf-${k}`).hidden=!$(`c-${k}`).checked}updateInitial();updateResidual();$('draft-note').textContent='Se recuperó un borrador local.'}
 $('risk-form').addEventListener('input',saveDraft);$('risk-form').addEventListener('change',saveDraft);
 
 function validateForm(){showMsg($('form-error'),'');const form=$('risk-form');if(!form.checkValidity()){form.reportValidity();return false}for(const key of controlKeys){const c=controlData(key);if(c.checked&&!c.description){showMsg($('form-error'),'Describe cada medida de control que marques.');return false}}
@@ -360,14 +396,14 @@ function validateForm(){showMsg($('form-error'),'');const form=$('risk-form');if
  if($('residual-state').value==='verificado'&&residual<initial&&impl===0){showMsg($('form-error'),'Para declarar una reducción residual como “verificada”, registra al menos un control implementado y verificado. Si todavía es una estimación, selecciona “Previsto”.');return false}
  return true}
 function buildRecord(){const old=records.find(r=>r.id===$('edit-id').value);const c={eliminate:controlData('eliminate'),substitute:controlData('substitute'),engineering:controlData('engineering'),administrative:controlData('administrative'),ppe:controlData('ppe')};return normalizeRecord({id:old?.id||uuid(),created_at:old?.created_at||new Date().toISOString(),updated_at:new Date().toISOString(),legacy_id:old?.legacy_id||'',area:$('area').value,proceso:$('process').value,proceso_peligroso:$('danger-process').value,puesto:$('job').value,trabajadores_expuestos:$('workers').value,elemento_proceso:$('element').value,elemento_proceso_texto:currentOptionText('element'),desc_elemento:$('element-desc').value,tipo_peligro:$('hazard').value,tipo_peligro_texto:currentOptionText('hazard'),energia:$('energy').value,energia_texto:currentOptionText('energy'),evento_riesgo:$('event').value,evento_riesgo_texto:currentOptionText('event'),consecuencia:$('consequence').value,consecuencia_texto:currentOptionText('consequence'),descripcion_peligro:$('scenario').value,controles_existentes:$('existing-controls').value,probabilidad_inicial:$('p-initial').value,severidad_inicial:$('s-initial').value,cont_eliminar:c.eliminate.checked?c.eliminate.description:'',estado_eliminar:c.eliminate.status,cont_sustituir:c.substitute.checked?c.substitute.description:'',estado_sustituir:c.substitute.status,cont_ingenieria:c.engineering.checked?c.engineering.description:'',estado_ingenieria:c.engineering.status,cont_administrativo:c.administrative.checked?c.administrative.description:'',estado_administrativo:c.administrative.status,cont_epp:c.ppe.checked?c.ppe.description:'',estado_epp:c.ppe.status,estado_residual:$('residual-state').value,probabilidad_residual:$('p-residual').value,severidad_residual:$('s-residual').value,responsable:$('responsible').value,fecha_objetivo:$('target-date').value,observaciones:$('observations').value})}
-function saveRecord(goMatrix=false){if(!validateForm())return false;const r=buildRecord(),idx=records.findIndex(x=>x.id===r.id);if(idx>=0)records[idx]=r;else records.push(r);persist();localStorage.removeItem(DRAFT_KEY);toast(idx>=0?'Evaluación actualizada.':'Evaluación guardada.','success');resetForm(true);renderAll();if(goMatrix)switchView('matrix');return true}
-$('risk-form').addEventListener('submit',e=>{e.preventDefault();saveRecord(false)});$('save-view').onclick=()=>saveRecord(true);$('clear-form').onclick=async()=>{if(await confirmBox('Limpiar formulario','Se perderá el borrador actual.'))resetForm(false)};$('cancel-edit').onclick=()=>resetForm(false);
-function resetForm(keepContext=false){const ctx=keepContext?{area:$('area').value,process:$('process').value,danger:$('danger-process').value,job:$('job').value,workers:$('workers').value}:null;$('risk-form').reset();$('edit-id').value='';$('form-title').textContent='Nueva evaluación';$('cancel-edit').classList.add('hidden');$('workers').value=ctx?.workers||'1';if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}for(const key of controlKeys){$(`cf-${key}`).hidden=true;$(`st-${key}`).value='propuesto'}$('p-initial').value='1';$('s-initial').value='1';$('p-residual').value='1';$('p-residual').dataset.touched='';$('s-residual').value='1';$('residual-state').value='previsto';$('s-residual').disabled=false;localStorage.removeItem(DRAFT_KEY);showMsg($('form-error'),'');showMsg($('form-success'),'');$('draft-note').textContent='Autoguardado local del borrador activo.';updateInitial();updateResidual()}
+async function saveRecord(goMatrix=false){if(!validateForm())return false;const r=buildRecord(),idx=records.findIndex(x=>x.id===r.id);if(idx>=0)records[idx]=r;else records.push(r);persist();const dk=draftKey();if(dk)localStorage.removeItem(dk);try{await saveCloudRecord(r);toast(idx>=0?'Evaluación actualizada y sincronizada.':'Evaluación guardada y sincronizada.','success')}catch(err){console.error(err);toast('La evaluación quedó en caché local y se intentará sincronizar nuevamente.','warning')}resetForm(true);renderAll();if(goMatrix)switchView('matrix');return true}
+$('risk-form').addEventListener('submit',async e=>{e.preventDefault();await saveRecord(false)});$('save-view').onclick=async()=>{await saveRecord(true)};$('clear-form').onclick=async()=>{if(await confirmBox('Limpiar formulario','Se perderá el borrador actual.'))resetForm(false)};$('cancel-edit').onclick=()=>resetForm(false);
+function resetForm(keepContext=false){const ctx=keepContext?{area:$('area').value,process:$('process').value,danger:$('danger-process').value,job:$('job').value,workers:$('workers').value}:null;$('risk-form').reset();$('edit-id').value='';$('form-title').textContent='Nueva evaluación';$('cancel-edit').classList.add('hidden');$('workers').value=ctx?.workers||'1';if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}for(const key of controlKeys){$(`cf-${key}`).hidden=true;$(`st-${key}`).value='propuesto'}$('p-initial').value='1';$('s-initial').value='1';$('p-residual').value='1';$('p-residual').dataset.touched='';$('s-residual').value='1';$('residual-state').value='previsto';$('s-residual').disabled=false;const dk=draftKey();if(dk)localStorage.removeItem(dk);showMsg($('form-error'),'');showMsg($('form-success'),'');$('draft-note').textContent='Autoguardado local del borrador activo.';updateInitial();updateResidual()}
 
 // ---------- EDITAR / ELIMINAR ----------
 function setSelectValue(id,value){const s=$(id);if([...s.options].some(o=>o.value===String(value)))s.value=String(value);else s.value=''}
 window.editRisk=function(id){const r=records.find(x=>x.id===id);if(!r)return;$('edit-id').value=r.id;$('form-title').textContent='Editar evaluación';$('cancel-edit').classList.remove('hidden');$('area').value=r.area;$('process').value=r.proceso;$('danger-process').value=r.proceso_peligroso;$('job').value=r.puesto;$('workers').value=r.trabajadores_expuestos;setSelectValue('element',r.elemento_proceso);$('element-desc').value=r.desc_elemento;setSelectValue('hazard',r.tipo_peligro);setSelectValue('energy',r.energia);setSelectValue('event',r.evento_riesgo);setSelectValue('consequence',r.consecuencia);$('scenario').value=r.descripcion_peligro;$('existing-controls').value=r.controles_existentes;$('p-initial').value=r.probabilidad_inicial;$('s-initial').value=r.severidad_inicial;const map={eliminate:['cont_eliminar','estado_eliminar'],substitute:['cont_sustituir','estado_sustituir'],engineering:['cont_ingenieria','estado_ingenieria'],administrative:['cont_administrativo','estado_administrativo'],ppe:['cont_epp','estado_epp']};for(const [k,[d,s]] of Object.entries(map)){$(`c-${k}`).checked=Boolean(r[d]);$(`cf-${k}`).hidden=!r[d];$(`d-${k}`).value=r[d]||'';$(`st-${k}`).value=r[s]||'propuesto'}$('residual-state').value=r.estado_residual;$('p-residual').value=r.probabilidad_residual;$('p-residual').dataset.touched='1';$('s-residual').value=r.severidad_residual;$('responsible').value=r.responsable;$('target-date').value=r.fecha_objetivo;$('observations').value=r.observaciones;updateInitial();updateResidual();switchView('evaluate')}
-window.deleteRisk=async function(id){if(!(await confirmBox('Eliminar evaluación','La evaluación se eliminará de este navegador. Esta acción no se puede deshacer.')))return;records=records.filter(x=>x.id!==id);persist();renderAll();toast('Evaluación eliminada.','success')}
+window.deleteRisk=async function(id){if(!(await confirmBox('Eliminar evaluación','La evaluación se eliminará de tu cuenta y de la caché local. Esta acción no se puede deshacer.')))return;try{await deleteCloudRecord(id)}catch(err){console.error(err);toast('No fue posible eliminarla de Supabase. No se realizaron cambios.','danger');return}records=records.filter(x=>x.id!==id);persist();renderAll();toast('Evaluación eliminada.','success')}
 
 // ---------- RENDER ----------
 function filteredRecords(){const q=text($('filter-text')?.value||'',250).toLowerCase(),fi=$('filter-initial')?.value||'',fr=$('filter-residual')?.value||'';return records.filter(r=>{const hay=[r.area,r.proceso,r.proceso_peligroso,r.puesto,r.tipo_peligro_texto,r.descripcion_peligro,r.evento_riesgo_texto,r.consecuencia_texto].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!fi||r.riesgo_inicial_texto===fi)&&(!fr||r.riesgo_residual_texto===fr)})}
@@ -401,7 +437,7 @@ $('excel-import-btn').onclick=()=>$('excel-file').click();$('excel-file').addEve
 // ---------- PDF ----------
 $('pdf-export').onclick=()=>{if(!window.jspdf?.jsPDF){toast('jsPDF no está disponible.','danger');return}const {jsPDF}=window.jspdf,doc=new jsPDF('landscape','pt','a4');doc.setFontSize(16);doc.setTextColor(11,42,111);doc.text('Matriz de Riesgos SST · La Movida SST Plus',36,34);doc.setFontSize(8);doc.setTextColor(90);doc.text('Matriz 5x5: convención de la herramienta. ISO 45002:2023 utilizada como referencia de gestión.',36,49);const body=records.map(r=>[r.area,r.proceso,r.puesto,r.tipo_peligro_texto||r.tipo_peligro,r.evento_riesgo_texto,r.consecuencia_texto,`${r.riesgo_inicial_valor} ${r.riesgo_inicial_texto}`,controlsSummary(r).map(x=>`${x[0]}: ${x[1]}`).join('\n')||'—',`${r.riesgo_residual_valor} ${r.riesgo_residual_texto}\n${r.estado_residual}`]);doc.autoTable({startY:62,head:[['Área','Proceso','Puesto','Peligro','Evento','Consecuencia','Inicial','Controles','Residual']],body,styles:{fontSize:6.5,cellPadding:3,valign:'top'},headStyles:{fillColor:[11,42,111]},columnStyles:{7:{cellWidth:160}}});doc.save(`Matriz_Riesgos_SST_${new Date().toISOString().slice(0,10)}.pdf`)};$('print-btn').onclick=()=>window.print();
 
-$('clear-data').onclick=async()=>{if(!(await confirmBox('Borrar datos locales','Se eliminarán todas las evaluaciones guardadas en este navegador. Descarga un respaldo antes si necesitas conservarlas.')))return;records=[];persist();localStorage.removeItem(DRAFT_KEY);renderAll();resetForm(false);toast('Datos locales eliminados.','success')};
+$('clear-data').onclick=async()=>{if(!(await confirmBox('Limpiar caché local','Esto no elimina las evaluaciones guardadas en Supabase. La aplicación volverá a descargarlas al sincronizar.')))return;const sk=storeKey(),dk=draftKey();if(sk)localStorage.removeItem(sk);if(dk)localStorage.removeItem(dk);records=[];renderAll();resetForm(false);toast('Caché local limpiada. Recuperando datos de tu cuenta…','success');await syncFromCloud()};
 
 // Inicio visual
 updateInitial();updateResidual();renderAll();
