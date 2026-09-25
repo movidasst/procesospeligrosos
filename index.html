@@ -572,13 +572,85 @@ $('refresh-catalogs').onclick=()=>loadCatalogs(true);
 $('consequence').addEventListener('change',()=>{const item=catalogs.consecuencias.find(x=>x.id===$('consequence').value);if(item?.severidad){$('s-initial').value=String(item.severidad);updateInitial();toast(`Severidad sugerida por catálogo: ${item.severidad}. Revísala antes de guardar.`,'info')}});
 
 // ---------- RIESGO Y CONTROLES ----------
-function setRisk(prefix,score){$(`${prefix}-score`).textContent=score;const cat=riskCategory(score),badge=$(`${prefix}-badge`);badge.textContent=cat;badge.className=`risk-badge ${riskClass(cat)}`}
-function updateInitial(){const p=clampInt($('p-initial').value,1,5,1),s=clampInt($('s-initial').value,1,5,1);setRisk('initial',p*s);if(!$('edit-id').value&&$('p-residual').dataset.touched!=='1'){$('p-residual').value=String(p);$('s-residual').value=String(s);updateResidual()}}
-function updateResidual(){const p=clampInt($('p-residual').value,0,5,1),s=clampInt($('s-residual').value,1,5,1);$('s-residual').disabled=p===0;setRisk('residual',p===0?0:p*s)}
-$('p-initial').onchange=updateInitial;$('s-initial').onchange=updateInitial;$('p-residual').addEventListener('change',()=>{$('p-residual').dataset.touched='1';updateResidual()});$('s-residual').onchange=updateResidual;
-for(const key of controlKeys){$(`c-${key}`).addEventListener('change',()=>{const on=$(`c-${key}`).checked;$(`cf-${key}`).hidden=!on;if(!on){$(`d-${key}`).value='';$(`st-${key}`).value='propuesto'}saveDraft()})}
-function controlData(key){return{checked:$(`c-${key}`).checked,description:text($(`d-${key}`).value,500),status:$(`st-${key}`).value==='implementado'?'implementado':'propuesto'}}
-function implementedCount(r){return [['cont_eliminar','estado_eliminar'],['cont_sustituir','estado_sustituir'],['cont_ingenieria','estado_ingenieria'],['cont_administrativo','estado_administrativo'],['cont_epp','estado_epp']].filter(([d,s])=>r[d]&&r[s]==='implementado').length}
+const METHOD_HELP={
+  matriz_5x5_movida:'Convención configurable de la herramienta. Valora un evento específico mediante probabilidad × severidad; no es una fórmula prescrita por ISO 45002.',
+  william_fine:'William T. Fine: grado de peligrosidad = Consecuencia × Exposición × Probabilidad. La escala ayuda a priorizar la actuación.',
+  gtc45:'GTC 45:2012: NP = ND × NE y NR = NP × NC. El nivel de deficiencia debe considerar la eficacia de los controles existentes.',
+  iperc_cualitativo:'Matriz cualitativa 3×3 de apoyo. Es una convención configurable de La Movida SST y no sustituye el método definido por la organización o la normativa aplicable.'
+};
+function methodInitialValues(){
+  const m=$('method-selector').value;
+  if(m==='william_fine')return{c:num($('fine-c').value,1),e:num($('fine-e').value,.5),p:num($('fine-p').value,.1)};
+  if(m==='gtc45')return{nd:num($('gtc-nd').value,10),ne:num($('gtc-ne').value,4),nc:num($('gtc-nc').value,10)};
+  if(m==='iperc_cualitativo')return{p:num($('qual-p').value,1),s:num($('qual-s').value,1)};
+  return{p:num($('p-initial').value,1),s:num($('s-initial').value,1)};
+}
+function methodResidualValues(){
+  const m=$('method-selector').value;
+  if(m==='william_fine')return{c:num($('fine-c-r').value,1),e:num($('fine-e-r').value,.5),p:num($('fine-p-r').value,.1)};
+  if(m==='gtc45')return{nd:num($('gtc-nd-r').value,10),ne:num($('gtc-ne-r').value,4),nc:num($('gtc-nc-r').value,10)};
+  if(m==='iperc_cualitativo')return{p:num($('qual-p-r').value,1),s:num($('qual-s-r').value,1)};
+  return{p:num($('p-residual').value,1),s:num($('s-residual').value,1)};
+}
+function isEliminatedInForm(){return $('c-eliminate').checked&&$('st-eliminate').value==='implementado'&&$('residual-state').value==='verificado'}
+function setRisk(prefix,result){
+  $(prefix+'-score').textContent=formatScore(result.score);
+  const badge=$(prefix+'-badge');
+  badge.textContent=result.category;
+  badge.className='risk-badge '+riskClass(result.band);
+  const action=$(prefix+'-action');if(action)action.textContent=result.action||'';
+}
+function syncMethodPanels(){
+  const m=$('method-selector').value;
+  const keys={matriz_5x5_movida:'5x5',william_fine:'fine',gtc45:'gtc',iperc_cualitativo:'qual'};
+  for(const k of ['5x5','fine','gtc','qual']){
+    $('method-panel-'+k).hidden=keys[m]!==k;
+    $('residual-panel-'+k).hidden=keys[m]!==k;
+  }
+  $('method-help').textContent=METHOD_HELP[m]||'';
+  updateInitial();updateResidual();
+}
+function syncExposureToMethod(){
+  const freq=$('exposure-frequency').value;
+  const fine={continua:'10',frecuente:'6',ocasional:'3',esporadica:'1'}[freq];
+  const gtc={continua:'4',frecuente:'3',ocasional:'2',esporadica:'1'}[freq];
+  if(fine&&!$('fine-e').dataset.touched){$('fine-e').value=fine;$('fine-e-r').value=fine}
+  if(gtc&&!$('gtc-ne').dataset.touched){$('gtc-ne').value=gtc;$('gtc-ne-r').value=gtc}
+  updateInitial();updateResidual();
+}
+function updateInitial(){
+  const m=$('method-selector').value,result=evaluateRisk(m,methodInitialValues());
+  setRisk('initial',result);
+  if(m==='gtc45')$('gtc-np-read').textContent=result.np===0?'Bajo · directo IV':formatScore(result.np)+' · '+result.npLabel;
+  if(!$('edit-id').value){
+    if(m==='matriz_5x5_movida'&&!$('p-residual').dataset.touched){$('p-residual').value=$('p-initial').value;$('s-residual').value=$('s-initial').value}
+    if(m==='william_fine'&&!$('fine-p-r').dataset.touched){$('fine-c-r').value=$('fine-c').value;$('fine-e-r').value=$('fine-e').value;$('fine-p-r').value=$('fine-p').value}
+    if(m==='gtc45'&&!$('gtc-nd-r').dataset.touched){$('gtc-nd-r').value=$('gtc-nd').value;$('gtc-ne-r').value=$('gtc-ne').value;$('gtc-nc-r').value=$('gtc-nc').value}
+    if(m==='iperc_cualitativo'&&!$('qual-p-r').dataset.touched){$('qual-p-r').value=$('qual-p').value;$('qual-s-r').value=$('qual-s').value}
+  }
+  updateResidual();
+}
+function updateResidual(){
+  const m=$('method-selector').value;
+  let result=isEliminatedInForm()?{score:0,category:'Eliminado',band:'eliminated',action:'Peligro eliminado mediante un control implementado y verificado.'}:evaluateRisk(m,methodResidualValues());
+  setRisk('residual',result);
+  if(m==='gtc45')$('gtc-np-r-read').textContent=result.np===0?'Bajo · directo IV':result.np!=null?formatScore(result.np)+' · '+result.npLabel:'—';
+}
+$('method-selector').addEventListener('change',function(){syncMethodPanels();saveDraft()});
+$('exposure-frequency').addEventListener('change',syncExposureToMethod);
+for(const id of ['p-initial','s-initial','fine-c','fine-e','fine-p','gtc-nd','gtc-ne','gtc-nc','qual-p','qual-s'])$(id).addEventListener('change',updateInitial);
+for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r','residual-state'])$(id).addEventListener('change',function(){$(id).dataset.touched='1';updateResidual()});
+for(const id of ['fine-e','gtc-ne'])$(id).addEventListener('change',function(){$(id).dataset.touched='1'});
+for(const key of controlKeys){
+  $('c-'+key).addEventListener('change',function(){
+    const on=$('c-'+key).checked;$('cf-'+key).hidden=!on;
+    if(!on){$('d-'+key).value='';$('st-'+key).value='propuesto'}
+    updateResidual();saveDraft();
+  });
+  $('st-'+key).addEventListener('change',updateResidual);
+}
+function controlData(key){return{checked:$('c-'+key).checked,description:text($('d-'+key).value,500),status:$('st-'+key).value==='implementado'?'implementado':'propuesto'}}
+function implementedCount(r){return [['cont_eliminar','estado_eliminar'],['cont_sustituir','estado_sustituir'],['cont_ingenieria','estado_ingenieria'],['cont_administrativo','estado_administrativo'],['cont_epp','estado_epp']].filter(function(x){return r[x[0]]&&r[x[1]]==='implementado'}).length}
 
 // ---------- BORRADOR ----------
 const draftIds=['area','process','danger-process','job','workers','element','element-desc','hazard','energy','event','consequence','scenario','existing-controls','p-initial','s-initial','residual-state','p-residual','s-residual','responsible','target-date','observations','d-eliminate','st-eliminate','d-substitute','st-substitute','d-engineering','st-engineering','d-administrative','st-administrative','d-ppe','st-ppe'];
