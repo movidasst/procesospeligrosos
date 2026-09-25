@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Matriz de Riesgos SST | La Movida SST Plus</title>
+  <title>IPERC · Evaluación de Riesgos SST | La Movida SST Plus</title>
   <meta name="description" content="Herramienta profesional para identificación de peligros y valoración de riesgos SST con exposición estructurada, matriz 5x5, William T. Fine, GTC 45 e IPERC cualitativo.">
   <meta name="theme-color" content="#0B2A6F">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
@@ -95,7 +95,7 @@
     <div class="wrap topbar-inner">
       <a class="brand" href="https://www.movidasst.com/" target="_self">
         <img src="https://drive.google.com/thumbnail?id=1MjVa3JxeKC95xEdlcZ5ZFMCKlatbrU2s&sz=w300" alt="La Movida SST Plus">
-        <div><strong>La Movida SST Plus</strong><span>Matriz de Riesgos SST</span></div>
+        <div><strong>La Movida SST Plus</strong><span>IPERC multimétodo</span></div>
       </a>
       <div class="head-actions"><span id="member-name" class="head-name"></span><a class="btn btn-soft" href="https://aplicaciones.movidasst.com/" target="_self">Apps</a><button id="logout-btn" class="btn btn-secondary" type="button">Salir</button></div>
     </div>
@@ -335,7 +335,7 @@
         <div class="catalog-grid"><div class="card catalog-card"><div id="cat-elementos" class="cat-num">0</div><div class="cat-name">Elementos</div></div><div class="card catalog-card"><div id="cat-peligros" class="cat-num">0</div><div class="cat-name">Peligros</div></div><div class="card catalog-card"><div id="cat-energias" class="cat-num">0</div><div class="cat-name">Energías</div></div><div class="card catalog-card"><div id="cat-eventos" class="cat-num">0</div><div class="cat-name">Eventos</div></div><div class="card catalog-card"><div id="cat-consecuencias" class="cat-num">0</div><div class="cat-name">Consecuencias</div></div></div>
         <div class="catalog-actions no-print">
           <button id="refresh-catalogs" class="btn btn-secondary" type="button">Actualizar catálogos</button>
-          <a class="btn btn-primary" href="catalogos-admin.html" target="_self" aria-label="Administrar catálogos técnicos">Administrar catálogos</a>
+          
           <button id="excel-template" class="btn btn-green" type="button">Plantilla Excel</button>
           <button id="excel-import-btn" class="btn btn-secondary" type="button">Importar Excel</button>
           <button id="json-restore-btn" class="btn btn-secondary" type="button">Restaurar JSON</button>
@@ -344,7 +344,7 @@
         <input id="excel-file" type="file" accept=".xlsx" class="hidden"><input id="json-file" type="file" accept="application/json,.json" class="hidden">
         <div class="storage-box"><h3>Dónde se guardan tus evaluaciones</h3><p>Las evaluaciones definitivas se guardan en <strong>Supabase</strong> asociadas a tu cuenta. El navegador mantiene una caché por integrante y el borrador activo para facilitar continuidad y recuperación. Cambiar de dispositivo ya no implica perder las evaluaciones sincronizadas. Excel y JSON continúan disponibles como respaldo y portabilidad.</p></div>
         <div class="storage-box"><h3>Catálogos centralizados en Supabase</h3><p>La aplicación ya no depende de Firebase. El navegador consulta únicamente <code>catalogos_riesgo_publicos()</code>; la tabla base no tiene lectura ni escritura directa para <code>anon</code> o <code>authenticated</code>. Para cambiar los catálogos se utiliza una operación administrativa controlada.</p></div>
-        <div class="storage-box"><h3>Administración técnica</h3><p>El botón <strong>Administrar catálogos</strong> abre <code>catalogos-admin.html</code> en esta misma pestaña. El panel exige credenciales de un administrador general y permite crear, editar, ordenar, activar o desactivar registros sin modificar SQL.</p></div>
+        <div class="storage-box"><h3>Catálogos técnicos</h3><p>Los catálogos de elementos, peligros, energías, eventos y consecuencias se mantienen centralizados en Supabase y la aplicación los consume mediante una operación de solo lectura. La administración no se expone desde esta página pública.</p></div>
         <div class="storage-box"><h3>Fundamento metodológico</h3><p>La herramienta separa <strong>peligro, exposición, evento, consecuencia y riesgo</strong>. ISO 45002:2023 se utiliza como referencia de gestión. Para valoración incorpora: <strong>Matriz 5×5 La Movida SST</strong> como convención configurable; <strong>William T. Fine</strong> con C × E × P; y <strong>GTC 45:2012</strong> con NP = ND × NE y NR = NP × NC. El modo IPERC cualitativo 3×3 es una convención de apoyo y no una escala universal obligatoria.</p><p style="margin-top:7px"><a href="https://www.iso.org/standard/76619.html" target="_blank" rel="noopener">ISO 45002:2023</a> · <a href="https://www.contaduria.gov.co/documents/115223/1516030/GTC%2B45%2BDE%2B2012.pdf/a327e06c-2bbc-954a-ba69-7dbe10a17880?download=true" target="_blank" rel="noopener">GTC 45:2012</a> · <a href="https://documentacion.fundacionmapfre.org/documentacion/pt/bib/13949.do" target="_blank" rel="noopener">William Fine · Evaluación matemática para control de riesgos</a></p></div>
       </section>
     </div>
