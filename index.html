@@ -782,18 +782,80 @@ window.editRisk=function(id){
 window.deleteRisk=async function(id){if(!(await confirmBox('Eliminar evaluación','La evaluación se eliminará de tu cuenta y de la caché local. Esta acción no se puede deshacer.')))return;try{await deleteCloudRecord(id)}catch(err){console.error(err);toast('No fue posible eliminarla de Supabase. No se realizaron cambios.','danger');return}records=records.filter(x=>x.id!==id);persist();renderAll();toast('Evaluación eliminada.','success')}
 
 // ---------- RENDER ----------
-function filteredRecords(){const q=text($('filter-text')?.value||'',250).toLowerCase(),fi=$('filter-initial')?.value||'',fr=$('filter-residual')?.value||'';return records.filter(r=>{const hay=[r.area,r.proceso,r.proceso_peligroso,r.puesto,r.tipo_peligro_texto,r.descripcion_peligro,r.evento_riesgo_texto,r.consecuencia_texto].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!fi||r.riesgo_inicial_texto===fi)&&(!fr||r.riesgo_residual_texto===fr)})}
-['filter-text','filter-initial','filter-residual'].forEach(id=>$(id).addEventListener(id==='filter-text'?'input':'change',renderMatrix));
-function addText(parent,tag,cls,val){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=val??'';parent.appendChild(e);return e}
-function riskBadgeNode(cat,score){const s=document.createElement('span');s.className=`risk-badge ${riskClass(cat)}`;s.textContent=`${score} · ${cat}`;return s}
-function controlsSummary(r){return [['Eliminación',r.cont_eliminar,r.estado_eliminar],['Sustitución',r.cont_sustituir,r.estado_sustituir],['Ingeniería',r.cont_ingenieria,r.estado_ingenieria],['Administrativo',r.cont_administrativo,r.estado_administrativo],['EPP',r.cont_epp,r.estado_epp]].filter(x=>x[1])}
-function renderMatrix(){const data=filteredRecords();$('matrix-count').textContent=`${data.length} / ${records.length}`;const mobile=$('mobile-records'),tbody=$('risk-tbody');mobile.innerHTML='';tbody.innerHTML='';if(!data.length){const empty=document.createElement('div');empty.className='card card-pad';empty.textContent=records.length?'No hay coincidencias con los filtros.':'Todavía no hay evaluaciones guardadas.';mobile.appendChild(empty);const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent=empty.textContent;td.style.textAlign='center';td.style.padding='28px';tr.appendChild(td);tbody.appendChild(tr);return}
- for(const r of data){const card=document.createElement('article');card.className='card record-card';const top=document.createElement('div');top.className='record-top';const left=document.createElement('div');addText(left,'h3','record-title',`${r.area} · ${r.proceso}`);addText(left,'div','record-meta',`${r.puesto} · ${r.trabajadores_expuestos} exp.`);top.appendChild(left);top.appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor));card.appendChild(top);const rg=document.createElement('div');rg.className='record-grid';const m1=document.createElement('div');m1.className='mini';addText(m1,'span','', 'Peligro');addText(m1,'strong','',r.tipo_peligro_texto||r.tipo_peligro||'—');const m2=document.createElement('div');m2.className='mini';addText(m2,'span','', 'Inicial');addText(m2,'strong','',`${r.riesgo_inicial_valor} · ${r.riesgo_inicial_texto}`);rg.append(m1,m2);card.appendChild(rg);addText(card,'p','record-desc',r.descripcion_peligro||'Sin descripción de escenario.');const acts=document.createElement('div');acts.className='record-actions';const eb=document.createElement('button');eb.className='btn btn-secondary';eb.type='button';eb.textContent='Editar';eb.onclick=()=>window.editRisk(r.id);const dbtn=document.createElement('button');dbtn.className='btn btn-danger';dbtn.type='button';dbtn.textContent='Eliminar';dbtn.onclick=()=>window.deleteRisk(r.id);acts.append(eb,dbtn);card.appendChild(acts);mobile.appendChild(card);
-   const tr=document.createElement('tr');const cells=[];for(let i=0;i<7;i++){const td=document.createElement('td');cells.push(td);tr.appendChild(td)}addText(cells[0],'strong','',r.area);addText(cells[0],'div','',r.proceso);addText(cells[0],'div','',`${r.puesto} · ${r.trabajadores_expuestos} exp.`);addText(cells[1],'strong','',r.tipo_peligro_texto||r.tipo_peligro);addText(cells[1],'div','',r.elemento_proceso_texto);addText(cells[1],'div','',r.descripcion_peligro);addText(cells[2],'strong','',r.evento_riesgo_texto);addText(cells[2],'div','',r.consecuencia_texto);cells[3].appendChild(riskBadgeNode(r.riesgo_inicial_texto,r.riesgo_inicial_valor));const controls=controlsSummary(r);if(controls.length)for(const [name,desc,status] of controls)addText(cells[4],'div','',`${name} [${status==='implementado'?'verificado':'propuesto'}]: ${desc}`);else addText(cells[4],'div','', 'Sin medidas adicionales registradas');cells[5].appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor));addText(cells[5],'div','',r.estado_residual==='verificado'?'Verificado':'Previsto');cells[6].className='actions';const e2=document.createElement('button');e2.className='btn btn-secondary';e2.type='button';e2.textContent='Editar';e2.onclick=()=>window.editRisk(r.id);const d2=document.createElement('button');d2.className='btn btn-danger';d2.type='button';d2.textContent='×';d2.onclick=()=>window.deleteRisk(r.id);cells[6].append(e2,d2);tbody.appendChild(tr)}
+function filteredRecords(){
+  const q=text($('filter-text')?$('filter-text').value:'',250).toLowerCase(),fi=$('filter-initial')?$('filter-initial').value:'',fr=$('filter-residual')?$('filter-residual').value:'';
+  return records.filter(function(r){
+    const hay=[r.area,r.proceso,r.proceso_peligroso,r.actividad_tarea,r.puesto,r.tipo_peligro_texto,r.descripcion_exposicion,r.via_exposicion,r.descripcion_peligro,r.evento_riesgo_texto,r.consecuencia_texto,r.metodo_label].join(' ').toLowerCase();
+    return(!q||hay.includes(q))&&(!fi||riskClass(r.riesgo_inicial_banda)===fi)&&(!fr||riskClass(r.riesgo_residual_banda)===fr);
+  });
 }
-function buildHeatmap(){const h=$('heatmap');h.innerHTML='';addText(h,'div','hm-head','Severidad ↓ / Probabilidad →');for(let p=1;p<=5;p++)addText(h,'div','hm-head',`${p}`);for(let s=5;s>=1;s--){addText(h,'div','hm-side',`${s} · ${['','Menor','Leve','Moderado','Grave','Catastrófico'][s]}`);for(let p=1;p<=5;p++){const score=p*s,cat=riskCategory(score),c=document.createElement('div');c.className=`hm-cell ${riskClass(cat)}`;c.dataset.p=p;c.dataset.s=s;addText(c,'span','',`${score} · ${cat}`);addText(c,'span','hm-count','0 registros');h.appendChild(c)}}}
-function updateDashboard(){$('stat-total').textContent=records.length;$('stat-critical').textContent=records.filter(r=>r.riesgo_residual_valor>=9).length;$('stat-controls').textContent=records.reduce((a,r)=>a+implementedCount(r),0);$('stat-reduced').textContent=records.filter(r=>riskRank(r.riesgo_residual_texto)<riskRank(r.riesgo_inicial_texto)).length;document.querySelectorAll('.hm-cell').forEach(c=>{const p=Number(c.dataset.p),s=Number(c.dataset.s),n=records.filter(r=>r.probabilidad_residual===p&&r.severidad_residual===s).length;c.querySelector('.hm-count').textContent=`${n} registro${n===1?'':'s'}`});const alerts=$('alerts');alerts.innerHTML='';const critical=records.filter(r=>r.riesgo_residual_valor>=9).sort((a,b)=>b.riesgo_residual_valor-a.riesgo_residual_valor);if(!critical.length)addText(alerts,'div','record-desc','No hay riesgos residuales altos o muy altos.');else for(const r of critical){const d=document.createElement('div');d.className=`alert-item ${r.riesgo_residual_valor>=16?'very':''}`;addText(d,'strong','',`${r.riesgo_residual_valor} · ${r.riesgo_residual_texto} · ${r.area}`);addText(d,'p','',`${r.tipo_peligro_texto||r.tipo_peligro} — ${r.puesto}`);alerts.appendChild(d)}renderCharts()}
-function renderCharts(){if(!window.Chart)return;const riskCounts={Eliminado:0,Bajo:0,Medio:0,Alto:0,'Muy Alto':0};records.forEach(r=>riskCounts[r.riesgo_residual_texto]=(riskCounts[r.riesgo_residual_texto]||0)+1);if(chartRisk)chartRisk.destroy();chartRisk=new Chart($('chart-risk'),{type:'doughnut',data:{labels:Object.keys(riskCounts),datasets:[{data:Object.values(riskCounts)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});const areas={};records.forEach(r=>areas[r.area||'Sin área']=(areas[r.area||'Sin área']||0)+1);if(chartArea)chartArea.destroy();chartArea=new Chart($('chart-area'),{type:'bar',data:{labels:Object.keys(areas),datasets:[{label:'Evaluaciones',data:Object.values(areas)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}})}
+['filter-text','filter-initial','filter-residual'].forEach(function(id){$(id).addEventListener(id==='filter-text'?'input':'change',renderMatrix)});
+function addText(parent,tag,cls,val){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=val==null?'':val;parent.appendChild(e);return e}
+function riskBadgeNode(cat,score,band){const s=document.createElement('span');s.className='risk-badge '+riskClass(band||cat);s.textContent=formatScore(score)+' · '+cat;return s}
+function controlsSummary(r){return [['Eliminación',r.cont_eliminar,r.estado_eliminar],['Sustitución',r.cont_sustituir,r.estado_sustituir],['Ingeniería',r.cont_ingenieria,r.estado_ingenieria],['Administrativo',r.cont_administrativo,r.estado_administrativo],['EPP',r.cont_epp,r.estado_epp]].filter(function(x){return x[1]})}
+function exposureSummary(r){
+  const parts=[];
+  if(r.frecuencia_exposicion)parts.push(r.frecuencia_exposicion);
+  if(r.duracion_exposicion)parts.push(r.duracion_exposicion);
+  if(r.intensidad_exposicion)parts.push(r.intensidad_exposicion);
+  if(r.via_exposicion)parts.push(r.via_exposicion);
+  return parts.join(' · ')||'Exposición no descrita';
+}
+function renderMatrix(){
+  const data=filteredRecords();$('matrix-count').textContent=data.length+' / '+records.length;
+  const mobile=$('mobile-records'),tbody=$('risk-tbody');mobile.innerHTML='';tbody.innerHTML='';
+  if(!data.length){
+    const empty=document.createElement('div');empty.className='card card-pad';empty.textContent=records.length?'No hay coincidencias con los filtros.':'Todavía no hay evaluaciones guardadas.';mobile.appendChild(empty);
+    const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent=empty.textContent;td.style.textAlign='center';td.style.padding='28px';tr.appendChild(td);tbody.appendChild(tr);return;
+  }
+  for(const r of data){
+    const card=document.createElement('article');card.className='card record-card';
+    const top=document.createElement('div');top.className='record-top';const left=document.createElement('div');
+    addText(left,'h3','record-title',(r.area||'—')+' · '+(r.proceso||'—'));addText(left,'div','record-meta',(r.actividad_tarea||r.puesto||'—')+' · '+r.metodo_label);top.appendChild(left);top.appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor,r.riesgo_residual_banda));card.appendChild(top);
+    const rg=document.createElement('div');rg.className='record-grid';
+    const m1=document.createElement('div');m1.className='mini';addText(m1,'span','','Peligro');addText(m1,'strong','',r.tipo_peligro_texto||r.tipo_peligro||'—');
+    const m2=document.createElement('div');m2.className='mini';addText(m2,'span','','Exposición');addText(m2,'strong','',exposureSummary(r));
+    rg.append(m1,m2);card.appendChild(rg);
+    addText(card,'p','record-desc',(r.evento_riesgo_texto||'Evento no definido')+' → '+(r.consecuencia_texto||'Consecuencia no definida'));
+    const acts=document.createElement('div');acts.className='record-actions';
+    const eb=document.createElement('button');eb.className='btn btn-secondary';eb.type='button';eb.textContent='Editar';eb.onclick=function(){window.editRisk(r.id)};
+    const dbtn=document.createElement('button');dbtn.className='btn btn-danger';dbtn.type='button';dbtn.textContent='Eliminar';dbtn.onclick=function(){window.deleteRisk(r.id)};
+    acts.append(eb,dbtn);card.appendChild(acts);mobile.appendChild(card);
+
+    const tr=document.createElement('tr'),cells=[];for(let i=0;i<7;i++){const td=document.createElement('td');cells.push(td);tr.appendChild(td)}
+    addText(cells[0],'strong','',r.area);addText(cells[0],'div','',r.proceso);addText(cells[0],'div','',r.actividad_tarea||'');addText(cells[0],'div','',r.puesto+' · '+r.trabajadores_expuestos+' exp.');
+    addText(cells[1],'strong','',r.tipo_peligro_texto||r.tipo_peligro||'—');addText(cells[1],'div','',r.elemento_proceso_texto||'');addText(cells[1],'div','',exposureSummary(r));
+    addText(cells[2],'strong','',r.evento_riesgo_texto||'—');addText(cells[2],'div','',r.consecuencia_texto||'—');addText(cells[2],'div','',r.descripcion_peligro||'');
+    addText(cells[3],'strong','',r.metodo_label);cells[3].appendChild(riskBadgeNode(r.riesgo_inicial_texto,r.riesgo_inicial_valor,r.riesgo_inicial_banda));addText(cells[3],'div','',r.riesgo_inicial_accion||'');
+    const ctrls=controlsSummary(r);if(ctrls.length)for(const x of ctrls)addText(cells[4],'div','',x[0]+' ['+(x[2]==='implementado'?'verificado':'propuesto')+']: '+x[1]);else addText(cells[4],'div','','Sin medidas adicionales registradas');
+    cells[5].appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor,r.riesgo_residual_banda));addText(cells[5],'div','',r.estado_residual==='verificado'?'Verificado':'Previsto');if(r.evidencia_control)addText(cells[5],'div','', 'Evidencia: '+r.evidencia_control);
+    cells[6].className='actions';const e2=document.createElement('button');e2.className='btn btn-secondary';e2.type='button';e2.textContent='Editar';e2.onclick=function(){window.editRisk(r.id)};const d2=document.createElement('button');d2.className='btn btn-danger';d2.type='button';d2.textContent='×';d2.onclick=function(){window.deleteRisk(r.id)};cells[6].append(e2,d2);tbody.appendChild(tr);
+  }
+}
+function buildHeatmap(){
+  const h=$('heatmap');h.innerHTML='';addText(h,'div','hm-head','Severidad ↓ / Probabilidad →');for(let p=1;p<=5;p++)addText(h,'div','hm-head',String(p));
+  for(let s=5;s>=1;s--){addText(h,'div','hm-side',s+' · '+['','Menor','Leve','Moderado','Grave','Catastrófico'][s]);for(let p=1;p<=5;p++){const res=eval5x5(p,s),cell=document.createElement('div');cell.className='hm-cell '+riskClass(res.band);cell.dataset.p=String(p);cell.dataset.s=String(s);addText(cell,'span','',formatScore(res.score)+' · '+res.category);addText(cell,'span','hm-count','0 registros');h.appendChild(cell)}}
+}
+function updateDashboard(){
+  $('stat-total').textContent=records.length;
+  $('stat-critical').textContent=records.filter(function(r){return ['high','very'].includes(riskClass(r.riesgo_residual_banda))}).length;
+  $('stat-controls').textContent=records.reduce(function(a,r){return a+implementedCount(r)},0);
+  $('stat-reduced').textContent=records.filter(function(r){return riskRank(r.riesgo_residual_banda)<riskRank(r.riesgo_inicial_banda)||Number(r.riesgo_residual_valor)<Number(r.riesgo_inicial_valor)&&r.metodo_evaluacion==='matriz_5x5_movida'}).length;
+  document.querySelectorAll('.hm-cell').forEach(function(cell){const p=Number(cell.dataset.p),s=Number(cell.dataset.s),n=records.filter(function(r){return r.metodo_evaluacion==='matriz_5x5_movida'&&r.probabilidad_residual===p&&r.severidad_residual===s}).length;cell.querySelector('.hm-count').textContent=n+' registro'+(n===1?'':'s')});
+  const alerts=$('alerts');alerts.innerHTML='';
+  const critical=records.filter(function(r){return ['high','very'].includes(riskClass(r.riesgo_residual_banda))}).sort(function(x,y){return riskRank(y.riesgo_residual_banda)-riskRank(x.riesgo_residual_banda)||Number(y.riesgo_residual_valor)-Number(x.riesgo_residual_valor)});
+  if(!critical.length)addText(alerts,'div','record-desc','No hay riesgos residuales de prioridad alta o crítica.');
+  else for(const r of critical){const d=document.createElement('div');d.className='alert-item '+(riskClass(r.riesgo_residual_banda)==='very'?'very':'');addText(d,'strong','',r.riesgo_residual_texto+' · '+r.area);addText(d,'p','',r.metodo_label+' · '+(r.tipo_peligro_texto||r.tipo_peligro)+' — '+r.puesto);alerts.appendChild(d)}
+  renderCharts();
+}
+function renderCharts(){
+  if(!window.Chart)return;
+  const bands={Eliminado:0,'Bajo / aceptable':0,'Medio / mejorable':0,Alto:0,'Crítico / muy alto':0};
+  records.forEach(function(r){const b=riskClass(r.riesgo_residual_banda);if(b==='eliminated')bands.Eliminado++;else if(b==='low')bands['Bajo / aceptable']++;else if(b==='medium')bands['Medio / mejorable']++;else if(b==='high')bands.Alto++;else bands['Crítico / muy alto']++});
+  if(chartRisk)chartRisk.destroy();chartRisk=new Chart($('chart-risk'),{type:'doughnut',data:{labels:Object.keys(bands),datasets:[{data:Object.values(bands)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+  const areas={};records.forEach(function(r){const k=r.area||'Sin área';areas[k]=(areas[k]||0)+1});
+  if(chartArea)chartArea.destroy();chartArea=new Chart($('chart-area'),{type:'bar',data:{labels:Object.keys(areas),datasets:[{label:'Evaluaciones',data:Object.values(areas)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+}
 function renderAll(){renderMatrix();updateDashboard()}
 buildHeatmap();
 
