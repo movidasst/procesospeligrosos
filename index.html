@@ -375,9 +375,68 @@ function clampInt(v,min,max,def=min){const n=parseInt(v,10);return Number.isFini
 function text(v,max=1200){return String(v??'').trim().slice(0,max)}
 function uuid(){return crypto.randomUUID?crypto.randomUUID():`r-${Date.now()}-${Math.random().toString(36).slice(2,10)}`}
 function normalizeDocumento(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,24)} function normalizeCode(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)}
-function riskCategory(score){const n=Number(score);if(n===0)return'Eliminado';if(n<=5)return'Bajo';if(n<=8)return'Medio';if(n<=15)return'Alto';return'Muy Alto'}
-function riskClass(cat){return cat==='Eliminado'?'eliminated':cat==='Bajo'?'low':cat==='Medio'?'medium':cat==='Alto'?'high':'very'}
-function riskRank(cat){return {Eliminado:0,Bajo:1,Medio:2,Alto:3,'Muy Alto':4}[cat]??99}
+function num(v,def=0){const n=Number(v);return Number.isFinite(n)?n:def}
+const METHOD_LABELS={
+  matriz_5x5_movida:'Matriz 5×5 · La Movida SST',
+  william_fine:'William T. Fine',
+  gtc45:'GTC 45:2012',
+  iperc_cualitativo:'IPERC cualitativo'
+};
+function methodLabel(m){return METHOD_LABELS[m]||METHOD_LABELS.matriz_5x5_movida}
+function formatScore(v){const n=Number(v);if(!Number.isFinite(n))return'—';return Number.isInteger(n)?String(n):String(Math.round(n*100)/100).replace('.',',')}
+function riskClass(catOrBand){
+  const s=String(catOrBand||'').toLowerCase();
+  if(s.includes('elimin'))return'eliminated';
+  if(['low','bajo','aceptable','iv'].some(x=>s===x||s.includes(x)))return'low';
+  if(['medium','medio','moderado','significativo','posible','iii'].some(x=>s===x||s.includes(x)))return'medium';
+  if(['high','alto','ii'].some(x=>s===x||s.includes(x)))return'high';
+  return'very';
+}
+function riskRank(catOrBand){return {eliminated:0,low:1,medium:2,high:3,very:4}[riskClass(catOrBand)]??99}
+function eval5x5(p,s){
+  p=num(p,1);s=num(s,1);
+  if(p===0)return{score:0,category:'Eliminado',band:'eliminated',action:'Peligro eliminado y verificado.'};
+  const score=p*s;
+  if(score<=5)return{score,category:'Bajo',band:'low',action:'Mantener controles y verificar periódicamente.'};
+  if(score<=8)return{score,category:'Medio',band:'medium',action:'Planificar mejoras y seguimiento.'};
+  if(score<=15)return{score,category:'Alto',band:'high',action:'Priorizar medidas de prevención y control.'};
+  return{score,category:'Muy Alto',band:'very',action:'Intervención prioritaria antes de continuar o mantener la exposición.'};
+}
+function evalFine(c,e,p){
+  c=num(c,1);e=num(e,.5);p=num(p,.1);
+  if(c===0||e===0||p===0)return{score:0,category:'Eliminado',band:'eliminated',action:'Peligro eliminado y verificado.'};
+  const score=c*e*p;
+  if(score>400)return{score,category:'Muy Alto',band:'very',action:'Fine: cese inmediato de la actividad peligrosa.'};
+  if(score>=200)return{score,category:'Alto',band:'high',action:'Fine: corrección inmediata.'};
+  if(score>=70)return{score,category:'Significativo',band:'high',action:'Fine: corrección urgente.'};
+  if(score>=20)return{score,category:'Posible',band:'medium',action:'Fine: no es una emergencia, pero debe corregirse.'};
+  return{score,category:'Aceptable',band:'low',action:'Fine: no requiere corrección por la escala, sin perjuicio del juicio profesional y requisitos aplicables.'};
+}
+function gtcProbabilityLabel(np){if(np>=24)return'Muy Alto';if(np>=10)return'Alto';if(np>=6)return'Medio';return'Bajo'}
+function evalGtc(nd,ne,nc){
+  nd=num(nd,10);ne=num(ne,4);nc=num(nc,10);
+  if(nd===0)return{score:20,category:'IV · Aceptable',band:'low',action:'GTC 45: mantener controles y comprobar periódicamente; ND Bajo se clasifica directamente en nivel IV.',np:0,npLabel:'Bajo'};
+  const np=nd*ne,score=np*nc;
+  if(score>=600)return{score,category:'I · No aceptable',band:'very',action:'GTC 45: situación crítica; intervención urgente y suspensión hasta control.',np,npLabel:gtcProbabilityLabel(np)};
+  if(score>=150)return{score,category:'II · Control inmediato',band:'high',action:'GTC 45: corregir y adoptar medidas de control de inmediato.',np,npLabel:gtcProbabilityLabel(np)};
+  if(score>=40)return{score,category:'III · Mejorable',band:'medium',action:'GTC 45: mejorar si es posible y justificar la intervención.',np,npLabel:gtcProbabilityLabel(np)};
+  return{score:20,category:'IV · Aceptable',band:'low',action:'GTC 45: mantener controles y realizar comprobaciones periódicas.',np,npLabel:gtcProbabilityLabel(np)};
+}
+function evalQual(p,s){
+  p=num(p,1);s=num(s,1);
+  if(p===0)return{score:0,category:'Eliminado',band:'eliminated',action:'Peligro eliminado y verificado.'};
+  const score=p*s;
+  if(score<=2)return{score,category:'Bajo',band:'low',action:'Mantener controles y seguimiento.'};
+  if(score<=4)return{score,category:'Moderado',band:'medium',action:'Planificar mejoras preventivas.'};
+  if(score<=6)return{score,category:'Alto',band:'high',action:'Intervenir con prioridad.'};
+  return{score,category:'Crítico',band:'very',action:'Intervención inmediata antes de mantener la exposición.'};
+}
+function evaluateRisk(method,v){
+  if(method==='william_fine')return evalFine(v.c,v.e,v.p);
+  if(method==='gtc45')return evalGtc(v.nd,v.ne,v.nc);
+  if(method==='iperc_cualitativo')return evalQual(v.p,v.s);
+  return eval5x5(v.p,v.s);
+}
 function currentOptionText(id){const s=$(id);return s&&s.selectedIndex>=0?text(s.options[s.selectedIndex]?.text?.replace(/^\[.*?\]\s*-\s*/,''),300):''}
 function showMsg(el,msg){el.textContent=msg||'';el.classList.toggle('show',Boolean(msg))}
 function toast(msg,type='info'){const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;$('toast-wrap').appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),250)},3500)}
@@ -387,14 +446,34 @@ $('confirm-cancel').onclick=()=>closeConfirm(false); $('confirm-ok').onclick=()=
 
 function normalizeRecord(r){
   if(!r||typeof r!=='object')return null;
+  const method=METHOD_LABELS[r.metodo_evaluacion]?r.metodo_evaluacion:'matriz_5x5_movida';
   const pI=clampInt(r.probabilidad_inicial,1,5,1),sI=clampInt(r.severidad_inicial,1,5,1),pR=clampInt(r.probabilidad_residual,0,5,pI),sR=clampInt(r.severidad_residual,1,5,sI);
-  const ri=pI*sI,rr=pR===0?0:pR*sR;
+  const fineCI=num(r.fine_consecuencia_inicial,1),fineEI=num(r.fine_exposicion_inicial,.5),finePI=num(r.fine_probabilidad_inicial,.1);
+  const fineCR=num(r.fine_consecuencia_residual,fineCI),fineER=num(r.fine_exposicion_residual,fineEI),finePR=num(r.fine_probabilidad_residual,finePI);
+  const gtcND=num(r.gtc_nd_inicial,10),gtcNE=num(r.gtc_ne_inicial,4),gtcNC=num(r.gtc_nc_inicial,10);
+  const gtcNDR=num(r.gtc_nd_residual,gtcND),gtcNER=num(r.gtc_ne_residual,gtcNE),gtcNCR=num(r.gtc_nc_residual,gtcNC);
+  const qualPI=clampInt(r.qual_probabilidad_inicial,1,3,1),qualSI=clampInt(r.qual_severidad_inicial,1,3,1);
+  const qualPR=clampInt(r.qual_probabilidad_residual,0,3,qualPI),qualSR=clampInt(r.qual_severidad_residual,1,3,qualSI);
+  const initial=evaluateRisk(method,method==='william_fine'?{c:fineCI,e:fineEI,p:finePI}:method==='gtc45'?{nd:gtcND,ne:gtcNE,nc:gtcNC}:method==='iperc_cualitativo'?{p:qualPI,s:qualSI}:{p:pI,s:sI});
+  let residual=evaluateRisk(method,method==='william_fine'?{c:fineCR,e:fineER,p:finePR}:method==='gtc45'?{nd:gtcNDR,ne:gtcNER,nc:gtcNCR}:method==='iperc_cualitativo'?{p:qualPR,s:qualSR}:{p:pR,s:sR});
+  const eliminated=Boolean(r.peligro_eliminado)||(method==='matriz_5x5_movida'&&pR===0)||(method==='iperc_cualitativo'&&qualPR===0);
+  if(eliminated)residual={score:0,category:'Eliminado',band:'eliminated',action:'Peligro eliminado y verificado.'};
   return {id:text(r.id,120)||uuid(),created_at:text(r.created_at,60)||new Date().toISOString(),updated_at:text(r.updated_at,60)||new Date().toISOString(),legacy_id:text(r.legacy_id,160),
-    area:text(r.area,120),proceso:text(r.proceso,150),proceso_peligroso:text(r.proceso_peligroso,160),puesto:text(r.puesto,140),trabajadores_expuestos:clampInt(r.trabajadores_expuestos,1,999999,1),
-    elemento_proceso:text(r.elemento_proceso,120),elemento_proceso_texto:text(r.elemento_proceso_texto,260),desc_elemento:text(r.desc_elemento,500),tipo_peligro:text(r.tipo_peligro,120),tipo_peligro_texto:text(r.tipo_peligro_texto,260),energia:text(r.energia,120),energia_texto:text(r.energia_texto,260),evento_riesgo:text(r.evento_riesgo,120),evento_riesgo_texto:text(r.evento_riesgo_texto,260),consecuencia:text(r.consecuencia,120),consecuencia_texto:text(r.consecuencia_texto,320),descripcion_peligro:text(r.descripcion_peligro,700),controles_existentes:text(r.controles_existentes,900),
-    probabilidad_inicial:pI,severidad_inicial:sI,riesgo_inicial_valor:ri,riesgo_inicial_texto:riskCategory(ri),
+    metodo_evaluacion:method,metodo_label:methodLabel(method),
+    area:text(r.area,120),proceso:text(r.proceso,150),proceso_peligroso:text(r.proceso_peligroso,160),actividad_tarea:text(r.actividad_tarea,180),puesto:text(r.puesto,140),trabajadores_expuestos:clampInt(r.trabajadores_expuestos,1,999999,1),
+    elemento_proceso:text(r.elemento_proceso,120),elemento_proceso_texto:text(r.elemento_proceso_texto,260),desc_elemento:text(r.desc_elemento,500),tipo_peligro:text(r.tipo_peligro,120),tipo_peligro_texto:text(r.tipo_peligro_texto,260),energia:text(r.energia,120),energia_texto:text(r.energia_texto,260),
+    expuestos_tipo:text(r.expuestos_tipo,80)||'trabajadores',frecuencia_exposicion:text(r.frecuencia_exposicion,80),duracion_exposicion:text(r.duracion_exposicion,120),intensidad_exposicion:text(r.intensidad_exposicion,160),via_exposicion:text(r.via_exposicion,180),descripcion_exposicion:text(r.descripcion_exposicion,700),
+    evento_riesgo:text(r.evento_riesgo,120),evento_riesgo_texto:text(r.evento_riesgo_texto,260),consecuencia:text(r.consecuencia,120),consecuencia_texto:text(r.consecuencia_texto,320),descripcion_peligro:text(r.descripcion_peligro,900),controles_existentes:text(r.controles_existentes,1000),
+    probabilidad_inicial:pI,severidad_inicial:sI,probabilidad_residual:pR,severidad_residual:sR,
+    fine_consecuencia_inicial:fineCI,fine_exposicion_inicial:fineEI,fine_probabilidad_inicial:finePI,fine_consecuencia_residual:fineCR,fine_exposicion_residual:fineER,fine_probabilidad_residual:finePR,
+    gtc_nd_inicial:gtcND,gtc_ne_inicial:gtcNE,gtc_nc_inicial:gtcNC,gtc_np_inicial:method==='gtc45'?initial.np:null,
+    gtc_nd_residual:gtcNDR,gtc_ne_residual:gtcNER,gtc_nc_residual:gtcNCR,gtc_np_residual:method==='gtc45'?residual.np:null,
+    qual_probabilidad_inicial:qualPI,qual_severidad_inicial:qualSI,qual_probabilidad_residual:qualPR,qual_severidad_residual:qualSR,
+    riesgo_inicial_valor:initial.score,riesgo_inicial_texto:initial.category,riesgo_inicial_banda:initial.band,riesgo_inicial_accion:initial.action,
     cont_eliminar:text(r.cont_eliminar,500),estado_eliminar:r.estado_eliminar==='implementado'?'implementado':'propuesto',cont_sustituir:text(r.cont_sustituir,500),estado_sustituir:r.estado_sustituir==='implementado'?'implementado':'propuesto',cont_ingenieria:text(r.cont_ingenieria,500),estado_ingenieria:r.estado_ingenieria==='implementado'?'implementado':'propuesto',cont_administrativo:text(r.cont_administrativo,500),estado_administrativo:r.estado_administrativo==='implementado'?'implementado':'propuesto',cont_epp:text(r.cont_epp,500),estado_epp:r.estado_epp==='implementado'?'implementado':'propuesto',
-    estado_residual:r.estado_residual==='verificado'?'verificado':'previsto',probabilidad_residual:pR,severidad_residual:sR,riesgo_residual_valor:rr,riesgo_residual_texto:riskCategory(rr),responsable:text(r.responsable,140),fecha_objetivo:text(r.fecha_objetivo,20),observaciones:text(r.observaciones,350)};
+    estado_residual:r.estado_residual==='verificado'?'verificado':'previsto',peligro_eliminado:eliminated,riesgo_residual_valor:residual.score,riesgo_residual_texto:residual.category,riesgo_residual_banda:residual.band,riesgo_residual_accion:residual.action,
+    justificacion_probabilidad:text(r.justificacion_probabilidad,700),justificacion_consecuencia:text(r.justificacion_consecuencia,700),evidencia_control:text(r.evidencia_control,900),
+    responsable:text(r.responsable,140),fecha_objetivo:text(r.fecha_objetivo,20),observaciones:text(r.observaciones,350)};
 }
 function storeKey(){const id=currentSession?.perfil?.integrante_id;return id?`${STORE_PREFIX}${id}`:null}
 function draftKey(){const id=currentSession?.perfil?.integrante_id;return id?`${DRAFT_PREFIX}${id}`:null}
