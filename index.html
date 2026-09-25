@@ -739,11 +739,46 @@ function buildRecord(){
 }
 async function saveRecord(goMatrix=false){if(!validateForm())return false;const r=buildRecord(),idx=records.findIndex(x=>x.id===r.id);if(idx>=0)records[idx]=r;else records.push(r);persist();const dk=draftKey();if(dk)localStorage.removeItem(dk);try{await saveCloudRecord(r);clearPending(r.id);toast(idx>=0?'Evaluación actualizada y sincronizada.':'Evaluación guardada y sincronizada.','success')}catch(err){console.error(err);markPending(r.id);toast('La evaluación quedó en caché local y se intentará sincronizar nuevamente.','warning')}resetForm(true);renderAll();if(goMatrix)switchView('matrix');return true}
 $('risk-form').addEventListener('submit',async e=>{e.preventDefault();await saveRecord(false)});$('save-view').onclick=async()=>{await saveRecord(true)};$('clear-form').onclick=async()=>{if(await confirmBox('Limpiar formulario','Se perderá el borrador actual.'))resetForm(false)};$('cancel-edit').onclick=()=>resetForm(false);
-function resetForm(keepContext=false){const ctx=keepContext?{area:$('area').value,process:$('process').value,danger:$('danger-process').value,job:$('job').value,workers:$('workers').value}:null;$('risk-form').reset();$('edit-id').value='';$('form-title').textContent='Nueva evaluación';$('cancel-edit').classList.add('hidden');$('workers').value=ctx?.workers||'1';if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}for(const key of controlKeys){$(`cf-${key}`).hidden=true;$(`st-${key}`).value='propuesto'}$('p-initial').value='1';$('s-initial').value='1';$('p-residual').value='1';$('p-residual').dataset.touched='';$('s-residual').value='1';$('residual-state').value='previsto';$('s-residual').disabled=false;const dk=draftKey();if(dk)localStorage.removeItem(dk);showMsg($('form-error'),'');showMsg($('form-success'),'');$('draft-note').textContent='Autoguardado local del borrador activo.';updateInitial();updateResidual()}
+function resetForm(keepContext=false){
+  const ctx=keepContext?{method:$('method-selector').value,area:$('area').value,process:$('process').value,danger:$('danger-process').value,job:$('job').value,workers:$('workers').value}:null;
+  $('risk-form').reset();$('edit-id').value='';$('form-title').textContent='Nueva evaluación';$('cancel-edit').classList.add('hidden');
+  $('method-selector').value=ctx?ctx.method:'matriz_5x5_movida';$('workers').value=ctx?ctx.workers:'1';
+  if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}
+  $('exposure-who').value='trabajadores';$('exposure-frequency').value='ocasional';
+  for(const key of controlKeys){$('cf-'+key).hidden=true;$('st-'+key).value='propuesto'}
+  for(const id of ['p-residual','fine-p-r','gtc-nd-r','qual-p-r'])$(id).dataset.touched='';
+  for(const id of ['fine-e','gtc-ne'])$(id).dataset.touched='';
+  $('residual-state').value='previsto';
+  const dk=draftKey();if(dk)localStorage.removeItem(dk);
+  showMsg($('form-error'),'');showMsg($('form-success'),'');$('draft-note').textContent='Autoguardado local del borrador activo.';
+  syncExposureToMethod();syncMethodPanels();updateInitial();updateResidual();
+}
 
 // ---------- EDITAR / ELIMINAR ----------
 function setSelectValue(id,value){const s=$(id);if([...s.options].some(o=>o.value===String(value)))s.value=String(value);else s.value=''}
-window.editRisk=function(id){const r=records.find(x=>x.id===id);if(!r)return;$('edit-id').value=r.id;$('form-title').textContent='Editar evaluación';$('cancel-edit').classList.remove('hidden');$('area').value=r.area;$('process').value=r.proceso;$('danger-process').value=r.proceso_peligroso;$('job').value=r.puesto;$('workers').value=r.trabajadores_expuestos;setSelectValue('element',r.elemento_proceso);$('element-desc').value=r.desc_elemento;setSelectValue('hazard',r.tipo_peligro);setSelectValue('energy',r.energia);setSelectValue('event',r.evento_riesgo);setSelectValue('consequence',r.consecuencia);$('scenario').value=r.descripcion_peligro;$('existing-controls').value=r.controles_existentes;$('p-initial').value=r.probabilidad_inicial;$('s-initial').value=r.severidad_inicial;const map={eliminate:['cont_eliminar','estado_eliminar'],substitute:['cont_sustituir','estado_sustituir'],engineering:['cont_ingenieria','estado_ingenieria'],administrative:['cont_administrativo','estado_administrativo'],ppe:['cont_epp','estado_epp']};for(const [k,[d,s]] of Object.entries(map)){$(`c-${k}`).checked=Boolean(r[d]);$(`cf-${k}`).hidden=!r[d];$(`d-${k}`).value=r[d]||'';$(`st-${k}`).value=r[s]||'propuesto'}$('residual-state').value=r.estado_residual;$('p-residual').value=r.probabilidad_residual;$('p-residual').dataset.touched='1';$('s-residual').value=r.severidad_residual;$('responsible').value=r.responsable;$('target-date').value=r.fecha_objetivo;$('observations').value=r.observaciones;updateInitial();updateResidual();switchView('evaluate')}
+window.editRisk=function(id){
+  const r=records.find(function(x){return x.id===id});if(!r)return;
+  $('edit-id').value=r.id;$('form-title').textContent='Editar evaluación';$('cancel-edit').classList.remove('hidden');
+  setSelectValue('method-selector',r.metodo_evaluacion);$('area').value=r.area;$('process').value=r.proceso;$('danger-process').value=r.proceso_peligroso;$('activity').value=r.actividad_tarea;$('job').value=r.puesto;$('workers').value=r.trabajadores_expuestos;
+  setSelectValue('element',r.elemento_proceso);$('element-desc').value=r.desc_elemento;setSelectValue('hazard',r.tipo_peligro);setSelectValue('energy',r.energia);
+  setSelectValue('exposure-who',r.expuestos_tipo||'trabajadores');setSelectValue('exposure-frequency',r.frecuencia_exposicion||'ocasional');$('exposure-duration').value=r.duracion_exposicion;$('exposure-intensity').value=r.intensidad_exposicion;$('exposure-route').value=r.via_exposicion;$('exposure-desc').value=r.descripcion_exposicion;
+  setSelectValue('event',r.evento_riesgo);setSelectValue('consequence',r.consecuencia);$('scenario').value=r.descripcion_peligro;$('existing-controls').value=r.controles_existentes;
+  $('p-initial').value=String(r.probabilidad_inicial);$('s-initial').value=String(r.severidad_inicial);
+  $('fine-c').value=String(r.fine_consecuencia_inicial);$('fine-e').value=String(r.fine_exposicion_inicial);$('fine-p').value=String(r.fine_probabilidad_inicial);
+  $('gtc-nd').value=String(r.gtc_nd_inicial);$('gtc-ne').value=String(r.gtc_ne_inicial);$('gtc-nc').value=String(r.gtc_nc_inicial);
+  $('qual-p').value=String(r.qual_probabilidad_inicial);$('qual-s').value=String(r.qual_severidad_inicial);
+  const map={eliminate:['cont_eliminar','estado_eliminar'],substitute:['cont_sustituir','estado_sustituir'],engineering:['cont_ingenieria','estado_ingenieria'],administrative:['cont_administrativo','estado_administrativo'],ppe:['cont_epp','estado_epp']};
+  for(const k of Object.keys(map)){const d=map[k][0],s=map[k][1];$('c-'+k).checked=Boolean(r[d]);$('cf-'+k).hidden=!r[d];$('d-'+k).value=r[d]||'';$('st-'+k).value=r[s]||'propuesto'}
+  $('residual-state').value=r.estado_residual;
+  $('p-residual').value=String(r.probabilidad_residual);$('s-residual').value=String(r.severidad_residual);
+  $('fine-c-r').value=String(r.fine_consecuencia_residual);$('fine-e-r').value=String(r.fine_exposicion_residual);$('fine-p-r').value=String(r.fine_probabilidad_residual);
+  $('gtc-nd-r').value=String(r.gtc_nd_residual);$('gtc-ne-r').value=String(r.gtc_ne_residual);$('gtc-nc-r').value=String(r.gtc_nc_residual);
+  $('qual-p-r').value=String(r.qual_probabilidad_residual);$('qual-s-r').value=String(r.qual_severidad_residual);
+  $('residual-just-prob').value=r.justificacion_probabilidad;$('residual-just-conseq').value=r.justificacion_consecuencia;$('control-evidence').value=r.evidencia_control;
+  $('responsible').value=r.responsable;$('target-date').value=r.fecha_objetivo;$('observations').value=r.observaciones;
+  for(const rid of ['p-residual','fine-p-r','gtc-nd-r','qual-p-r'])$(rid).dataset.touched='1';
+  syncMethodPanels();updateInitial();updateResidual();switchView('evaluate');
+}
 window.deleteRisk=async function(id){if(!(await confirmBox('Eliminar evaluación','La evaluación se eliminará de tu cuenta y de la caché local. Esta acción no se puede deshacer.')))return;try{await deleteCloudRecord(id)}catch(err){console.error(err);toast('No fue posible eliminarla de Supabase. No se realizaron cambios.','danger');return}records=records.filter(x=>x.id!==id);persist();renderAll();toast('Evaluación eliminada.','success')}
 
 // ---------- RENDER ----------
