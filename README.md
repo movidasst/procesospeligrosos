@@ -11,6 +11,7 @@ Peligro → Exposición → Evento → Consecuencia → Riesgo → Controles →
 - Matriz 5×5 La Movida SST: convención configurable de la herramienta.
 - William T. Fine: C × E × P.
 - GTC 45:2012: NP = ND × NE; NR = NP × NC.
+- COVENIN 4004:2000: matriz cualitativa de probabilidad Baja/Media/Alta × consecuencias LD/D/ED, con niveles T/TO/M/I/IN.
 - IPERC cualitativo 3×3: convención configurable de apoyo.
 
 ## Datos
