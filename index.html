@@ -156,6 +156,7 @@
                 <option value="matriz_5x5_movida">Matriz 5×5 · La Movida SST</option>
                 <option value="william_fine">William T. Fine · C × E × P</option>
                 <option value="gtc45">GTC 45:2012 · ND × NE × NC</option>
+                <option value="covenin_4004">COVENIN 4004:2000 · matriz cualitativa</option>
                 <option value="iperc_cualitativo">IPERC cualitativo · convención configurable</option>
               </select>
               <div id="method-help" class="method-note"></div>
@@ -244,6 +245,15 @@
                 <div class="method-note">NP calculado: <strong id="gtc-np-read">40</strong>. Si ND es Bajo, la guía no asigna valor y clasifica directamente en nivel IV.</div>
               </div>
 
+              <div id="method-panel-covenin" class="method-panel" hidden>
+                <h4>COVENIN 4004:2000 · evaluación general de riesgos</h4><div class="formula">Probabilidad × Consecuencia · matriz cualitativa</div>
+                <div class="form-grid two">
+                  <div class="field"><label for="covenin-p">Probabilidad *</label><select id="covenin-p" class="select"><option value="1">Baja · el daño ocurrirá raras veces</option><option value="2">Media · el daño ocurrirá en algunas ocasiones</option><option value="3">Alta · el daño ocurrirá siempre o casi siempre</option></select></div>
+                  <div class="field"><label for="covenin-s">Consecuencia *</label><select id="covenin-s" class="select"><option value="1">LD · Ligeramente dañino</option><option value="2">D · Dañino</option><option value="3">ED · Extremadamente dañino</option></select></div>
+                </div>
+                <div class="method-note">El resultado es cualitativo: T · Trivial, TO · Tolerable, M · Moderado, I · Importante o IN · Intolerable. No se convierte en una matriz 5×5.</div>
+              </div>
+
               <div id="method-panel-qual" class="method-panel" hidden>
                 <h4>IPERC cualitativo · convención configurable</h4><div class="formula">P × S · escala 3×3</div>
                 <div class="form-grid two">
@@ -293,6 +303,13 @@
                   <div class="field"><label for="gtc-nc-r">NC residual *</label><select id="gtc-nc-r" class="select"><option value="10">10 · Leve</option><option value="25">25 · Grave</option><option value="60">60 · Muy grave</option><option value="100">100 · Mortal o catastrófico</option></select></div>
                 </div>
                 <div class="method-note">NP residual calculado: <strong id="gtc-np-r-read">40</strong>.</div>
+              </div>
+
+              <div id="residual-panel-covenin" class="method-panel" hidden>
+                <div class="form-grid two">
+                  <div class="field"><label for="covenin-p-r">Probabilidad residual *</label><select id="covenin-p-r" class="select"><option value="1">Baja · raras veces</option><option value="2">Media · algunas ocasiones</option><option value="3">Alta · siempre o casi siempre</option></select></div>
+                  <div class="field"><label for="covenin-s-r">Consecuencia residual *</label><select id="covenin-s-r" class="select"><option value="1">LD · Ligeramente dañino</option><option value="2">D · Dañino</option><option value="3">ED · Extremadamente dañino</option></select></div>
+                </div>
               </div>
 
               <div id="residual-panel-qual" class="method-panel" hidden>
@@ -382,6 +399,7 @@ const METHOD_LABELS={
   matriz_5x5_movida:'Matriz 5×5 · La Movida SST',
   william_fine:'William T. Fine',
   gtc45:'GTC 45:2012',
+  covenin_4004:'COVENIN 4004:2000',
   iperc_cualitativo:'IPERC cualitativo'
 };
 function methodLabel(m){return METHOD_LABELS[m]||METHOD_LABELS.matriz_5x5_movida}
@@ -389,9 +407,9 @@ function formatScore(v){const n=Number(v);if(!Number.isFinite(n))return'—';ret
 function riskClass(catOrBand){
   const s=String(catOrBand||'').toLowerCase();
   if(s.includes('elimin'))return'eliminated';
-  if(['low','bajo','aceptable','iv'].some(x=>s===x||s.includes(x)))return'low';
+  if(['low','bajo','aceptable','tolerable','trivial','iv'].some(x=>s===x||s.includes(x)))return'low';
   if(['medium','medio','moderado','significativo','posible','iii'].some(x=>s===x||s.includes(x)))return'medium';
-  if(['high','alto','ii'].some(x=>s===x||s.includes(x)))return'high';
+  if(['high','alto','importante','ii'].some(x=>s===x||s.includes(x)))return'high';
   return'very';
 }
 function riskRank(catOrBand){return {eliminated:0,low:1,medium:2,high:3,very:4}[riskClass(catOrBand)]??99}
@@ -424,6 +442,21 @@ function evalGtc(nd,ne,nc){
   if(score>=40)return{score,category:'III · Mejorable',band:'medium',action:'GTC 45: mejorar si es posible y justificar la intervención.',np,npLabel:gtcProbabilityLabel(np)};
   return{score:20,category:'IV · Aceptable',band:'low',action:'GTC 45: mantener controles y realizar comprobaciones periódicas.',np,npLabel:gtcProbabilityLabel(np)};
 }
+function evalCovenin(p,s){
+  p=clampInt(p,1,3,1);s=clampInt(s,1,3,1);
+  const matrix={
+    '1-1':{score:1,display:'T',category:'Trivial',band:'low',action:'COVENIN 4004: no se requiere acción específica.'},
+    '1-2':{score:2,display:'TO',category:'Tolerable',band:'low',action:'COVENIN 4004: mantener controles; considerar mejoras de bajo costo y comprobaciones periódicas.'},
+    '1-3':{score:3,display:'M',category:'Moderado',band:'medium',action:'COVENIN 4004: realizar esfuerzos para reducir el riesgo y definir un período de implantación.'},
+    '2-1':{score:2,display:'TO',category:'Tolerable',band:'low',action:'COVENIN 4004: mantener controles; considerar mejoras de bajo costo y comprobaciones periódicas.'},
+    '2-2':{score:3,display:'M',category:'Moderado',band:'medium',action:'COVENIN 4004: realizar esfuerzos para reducir el riesgo y definir un período de implantación.'},
+    '2-3':{score:4,display:'I',category:'Importante',band:'high',action:'COVENIN 4004: no iniciar el trabajo hasta reducir el riesgo; priorizar recursos y actuación.'},
+    '3-1':{score:3,display:'M',category:'Moderado',band:'medium',action:'COVENIN 4004: realizar esfuerzos para reducir el riesgo y definir un período de implantación.'},
+    '3-2':{score:4,display:'I',category:'Importante',band:'high',action:'COVENIN 4004: no iniciar el trabajo hasta reducir el riesgo; priorizar recursos y actuación.'},
+    '3-3':{score:5,display:'IN',category:'Intolerable',band:'very',action:'COVENIN 4004: no iniciar ni continuar el trabajo hasta reducir el riesgo.'}
+  };
+  return matrix[p+'-'+s];
+}
 function evalQual(p,s){
   p=num(p,1);s=num(s,1);
   if(p===0)return{score:0,category:'Eliminado',band:'eliminated',action:'Peligro eliminado y verificado.'};
@@ -436,6 +469,7 @@ function evalQual(p,s){
 function evaluateRisk(method,v){
   if(method==='william_fine')return evalFine(v.c,v.e,v.p);
   if(method==='gtc45')return evalGtc(v.nd,v.ne,v.nc);
+  if(method==='covenin_4004')return evalCovenin(v.p,v.s);
   if(method==='iperc_cualitativo')return evalQual(v.p,v.s);
   return eval5x5(v.p,v.s);
 }
@@ -578,12 +612,14 @@ const METHOD_HELP={
   matriz_5x5_movida:'Convención configurable de la herramienta. Valora un evento específico mediante probabilidad × severidad; no es una fórmula prescrita por ISO 45002.',
   william_fine:'William T. Fine: grado de peligrosidad = Consecuencia × Exposición × Probabilidad. La escala ayuda a priorizar la actuación.',
   gtc45:'GTC 45:2012: NP = ND × NE y NR = NP × NC. El nivel de deficiencia debe considerar la eficacia de los controles existentes.',
+  covenin_4004:'COVENIN 4004:2000: evaluación general cualitativa mediante probabilidad Baja/Media/Alta y consecuencias LD/D/ED. El resultado es Trivial, Tolerable, Moderado, Importante o Intolerable.',
   iperc_cualitativo:'Matriz cualitativa 3×3 de apoyo. Es una convención configurable de La Movida SST y no sustituye el método definido por la organización o la normativa aplicable.'
 };
 function methodInitialValues(){
   const m=$('method-selector').value;
   if(m==='william_fine')return{c:num($('fine-c').value,1),e:num($('fine-e').value,.5),p:num($('fine-p').value,.1)};
   if(m==='gtc45')return{nd:num($('gtc-nd').value,10),ne:num($('gtc-ne').value,4),nc:num($('gtc-nc').value,10)};
+  if(m==='covenin_4004')return{p:num($('covenin-p').value,1),s:num($('covenin-s').value,1)};
   if(m==='iperc_cualitativo')return{p:num($('qual-p').value,1),s:num($('qual-s').value,1)};
   return{p:num($('p-initial').value,1),s:num($('s-initial').value,1)};
 }
@@ -591,12 +627,13 @@ function methodResidualValues(){
   const m=$('method-selector').value;
   if(m==='william_fine')return{c:num($('fine-c-r').value,1),e:num($('fine-e-r').value,.5),p:num($('fine-p-r').value,.1)};
   if(m==='gtc45')return{nd:num($('gtc-nd-r').value,10),ne:num($('gtc-ne-r').value,4),nc:num($('gtc-nc-r').value,10)};
+  if(m==='covenin_4004')return{p:num($('covenin-p-r').value,1),s:num($('covenin-s-r').value,1)};
   if(m==='iperc_cualitativo')return{p:num($('qual-p-r').value,1),s:num($('qual-s-r').value,1)};
   return{p:num($('p-residual').value,1),s:num($('s-residual').value,1)};
 }
 function isEliminatedInForm(){return $('c-eliminate').checked&&$('st-eliminate').value==='implementado'&&$('residual-state').value==='verificado'}
 function setRisk(prefix,result){
-  $(prefix+'-score').textContent=formatScore(result.score);
+  $(prefix+'-score').textContent=result.display||formatScore(result.score);
   const badge=$(prefix+'-badge');
   badge.textContent=result.category;
   badge.className='risk-badge '+riskClass(result.band);
@@ -604,8 +641,8 @@ function setRisk(prefix,result){
 }
 function syncMethodPanels(){
   const m=$('method-selector').value;
-  const keys={matriz_5x5_movida:'5x5',william_fine:'fine',gtc45:'gtc',iperc_cualitativo:'qual'};
-  for(const k of ['5x5','fine','gtc','qual']){
+  const keys={matriz_5x5_movida:'5x5',william_fine:'fine',gtc45:'gtc',covenin_4004:'covenin',iperc_cualitativo:'qual'};
+  for(const k of ['5x5','fine','gtc','covenin','qual']){
     $('method-panel-'+k).hidden=keys[m]!==k;
     $('residual-panel-'+k).hidden=keys[m]!==k;
   }
@@ -613,7 +650,7 @@ function syncMethodPanels(){
   updateInitial();updateResidual();
 }
 function residualMethodTouched(m){
-  const ids=m==='william_fine'?['fine-c-r','fine-e-r','fine-p-r']:m==='gtc45'?['gtc-nd-r','gtc-ne-r','gtc-nc-r']:m==='iperc_cualitativo'?['qual-p-r','qual-s-r']:['p-residual','s-residual'];
+  const ids=m==='william_fine'?['fine-c-r','fine-e-r','fine-p-r']:m==='gtc45'?['gtc-nd-r','gtc-ne-r','gtc-nc-r']:m==='covenin_4004'?['covenin-p-r','covenin-s-r']:m==='iperc_cualitativo'?['qual-p-r','qual-s-r']:['p-residual','s-residual'];
   return ids.some(function(id){return $(id).dataset.touched==='1'});
 }
 function syncExposureToMethod(){
@@ -634,6 +671,7 @@ function updateInitial(){
     if(m==='matriz_5x5_movida'){$('p-residual').value=$('p-initial').value;$('s-residual').value=$('s-initial').value}
     if(m==='william_fine'){$('fine-c-r').value=$('fine-c').value;$('fine-e-r').value=$('fine-e').value;$('fine-p-r').value=$('fine-p').value}
     if(m==='gtc45'){$('gtc-nd-r').value=$('gtc-nd').value;$('gtc-ne-r').value=$('gtc-ne').value;$('gtc-nc-r').value=$('gtc-nc').value}
+    if(m==='covenin_4004'){$('covenin-p-r').value=$('covenin-p').value;$('covenin-s-r').value=$('covenin-s').value}
     if(m==='iperc_cualitativo'){$('qual-p-r').value=$('qual-p').value;$('qual-s-r').value=$('qual-s').value}
   }
   updateResidual();
@@ -646,8 +684,8 @@ function updateResidual(){
 }
 $('method-selector').addEventListener('change',function(){syncMethodPanels();saveDraft()});
 $('exposure-frequency').addEventListener('change',syncExposureToMethod);
-for(const id of ['p-initial','s-initial','fine-c','fine-e','fine-p','gtc-nd','gtc-ne','gtc-nc','qual-p','qual-s'])$(id).addEventListener('change',updateInitial);
-for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r','residual-state'])$(id).addEventListener('change',function(){$(id).dataset.touched='1';updateResidual()});
+for(const id of ['p-initial','s-initial','fine-c','fine-e','fine-p','gtc-nd','gtc-ne','gtc-nc','covenin-p','covenin-s','qual-p','qual-s'])$(id).addEventListener('change',updateInitial);
+for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','covenin-p-r','covenin-s-r','qual-p-r','qual-s-r','residual-state'])$(id).addEventListener('change',function(){$(id).dataset.touched='1';updateResidual()});
 for(const id of ['fine-e','gtc-ne'])$(id).addEventListener('change',function(){$(id).dataset.touched='1'});
 for(const key of controlKeys){
   $('c-'+key).addEventListener('change',function(){
@@ -661,7 +699,7 @@ function controlData(key){return{checked:$('c-'+key).checked,description:text($(
 function implementedCount(r){return [['cont_eliminar','estado_eliminar'],['cont_sustituir','estado_sustituir'],['cont_ingenieria','estado_ingenieria'],['cont_administrativo','estado_administrativo'],['cont_epp','estado_epp']].filter(function(x){return r[x[0]]&&r[x[1]]==='implementado'}).length}
 
 // ---------- BORRADOR ----------
-const draftIds=['method-selector','area','process','danger-process','activity','job','workers','element','element-desc','hazard','energy','exposure-who','exposure-frequency','exposure-duration','exposure-intensity','exposure-route','exposure-desc','event','consequence','scenario','existing-controls','p-initial','s-initial','fine-c','fine-e','fine-p','gtc-nd','gtc-ne','gtc-nc','qual-p','qual-s','residual-state','p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r','residual-just-prob','residual-just-conseq','control-evidence','responsible','target-date','observations','d-eliminate','st-eliminate','d-substitute','st-substitute','d-engineering','st-engineering','d-administrative','st-administrative','d-ppe','st-ppe'];
+const draftIds=['method-selector','area','process','danger-process','activity','job','workers','element','element-desc','hazard','energy','exposure-who','exposure-frequency','exposure-duration','exposure-intensity','exposure-route','exposure-desc','event','consequence','scenario','existing-controls','p-initial','s-initial','fine-c','fine-e','fine-p','gtc-nd','gtc-ne','gtc-nc','covenin-p','covenin-s','qual-p','qual-s','residual-state','p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','covenin-p-r','covenin-s-r','qual-p-r','qual-s-r','residual-just-prob','residual-just-conseq','control-evidence','responsible','target-date','observations','d-eliminate','st-eliminate','d-substitute','st-substitute','d-engineering','st-engineering','d-administrative','st-administrative','d-ppe','st-ppe'];
 function saveDraft(){
   if($('edit-id').value)return;
   const key=draftKey();if(!key)return;
@@ -680,7 +718,7 @@ function restoreDraft(){
     }
   }
   for(const k of controlKeys){$('c-'+k).checked=Boolean(d['c-'+k]);$('cf-'+k).hidden=!$('c-'+k).checked}
-  for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r'])$(id).dataset.touched='1';
+  for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','covenin-p-r','covenin-s-r','qual-p-r','qual-s-r'])$(id).dataset.touched='1';
   syncMethodPanels();updateInitial();updateResidual();$('draft-note').textContent='Se recuperó un borrador local.';
 }
 $('risk-form').addEventListener('input',saveDraft);$('risk-form').addEventListener('change',saveDraft);
@@ -690,12 +728,14 @@ function formResidualResult(){return isEliminatedInForm()?{score:0,category:'Eli
 function probabilityFactor(method,where){
   if(method==='william_fine')return where==='initial'?num($('fine-e').value)*num($('fine-p').value):num($('fine-e-r').value)*num($('fine-p-r').value);
   if(method==='gtc45')return where==='initial'?num($('gtc-nd').value)*num($('gtc-ne').value):num($('gtc-nd-r').value)*num($('gtc-ne-r').value);
+  if(method==='covenin_4004')return where==='initial'?num($('covenin-p').value):num($('covenin-p-r').value);
   if(method==='iperc_cualitativo')return where==='initial'?num($('qual-p').value):num($('qual-p-r').value);
   return where==='initial'?num($('p-initial').value):num($('p-residual').value);
 }
 function consequenceFactor(method,where){
   if(method==='william_fine')return where==='initial'?num($('fine-c').value):num($('fine-c-r').value);
   if(method==='gtc45')return where==='initial'?num($('gtc-nc').value):num($('gtc-nc-r').value);
+  if(method==='covenin_4004')return where==='initial'?num($('covenin-s').value):num($('covenin-s-r').value);
   if(method==='iperc_cualitativo')return where==='initial'?num($('qual-s').value):num($('qual-s-r').value);
   return where==='initial'?num($('s-initial').value):num($('s-residual').value);
 }
@@ -739,6 +779,7 @@ function buildRecord(){
     probabilidad_inicial:$('p-initial').value,severidad_inicial:$('s-initial').value,probabilidad_residual:$('p-residual').value,severidad_residual:$('s-residual').value,
     fine_consecuencia_inicial:$('fine-c').value,fine_exposicion_inicial:$('fine-e').value,fine_probabilidad_inicial:$('fine-p').value,fine_consecuencia_residual:$('fine-c-r').value,fine_exposicion_residual:$('fine-e-r').value,fine_probabilidad_residual:$('fine-p-r').value,
     gtc_nd_inicial:$('gtc-nd').value,gtc_ne_inicial:$('gtc-ne').value,gtc_nc_inicial:$('gtc-nc').value,gtc_nd_residual:$('gtc-nd-r').value,gtc_ne_residual:$('gtc-ne-r').value,gtc_nc_residual:$('gtc-nc-r').value,
+    covenin_probabilidad_inicial:$('covenin-p').value,covenin_severidad_inicial:$('covenin-s').value,covenin_probabilidad_residual:$('covenin-p-r').value,covenin_severidad_residual:$('covenin-s-r').value,
     qual_probabilidad_inicial:$('qual-p').value,qual_severidad_inicial:$('qual-s').value,qual_probabilidad_residual:$('qual-p-r').value,qual_severidad_residual:$('qual-s-r').value,
     cont_eliminar:ctl.eliminate.checked?ctl.eliminate.description:'',estado_eliminar:ctl.eliminate.status,cont_sustituir:ctl.substitute.checked?ctl.substitute.description:'',estado_sustituir:ctl.substitute.status,cont_ingenieria:ctl.engineering.checked?ctl.engineering.description:'',estado_ingenieria:ctl.engineering.status,cont_administrativo:ctl.administrative.checked?ctl.administrative.description:'',estado_administrativo:ctl.administrative.status,cont_epp:ctl.ppe.checked?ctl.ppe.description:'',estado_epp:ctl.ppe.status,
     estado_residual:$('residual-state').value,peligro_eliminado:isEliminatedInForm(),justificacion_probabilidad:$('residual-just-prob').value,justificacion_consecuencia:$('residual-just-conseq').value,evidencia_control:$('control-evidence').value,
@@ -754,7 +795,7 @@ function resetForm(keepContext=false){
   if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}
   $('exposure-who').value='trabajadores';$('exposure-frequency').value='ocasional';
   for(const key of controlKeys){$('cf-'+key).hidden=true;$('st-'+key).value='propuesto'}
-  for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r'])$(id).dataset.touched='';
+  for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','covenin-p-r','covenin-s-r','qual-p-r','qual-s-r'])$(id).dataset.touched='';
   for(const id of ['fine-e','gtc-ne'])$(id).dataset.touched='';
   $('residual-state').value='previsto';
   const dk=draftKey();if(dk)localStorage.removeItem(dk);
@@ -784,7 +825,7 @@ window.editRisk=function(id){
   $('qual-p-r').value=String(r.qual_probabilidad_residual);$('qual-s-r').value=String(r.qual_severidad_residual);
   $('residual-just-prob').value=r.justificacion_probabilidad;$('residual-just-conseq').value=r.justificacion_consecuencia;$('control-evidence').value=r.evidencia_control;
   $('responsible').value=r.responsable;$('target-date').value=r.fecha_objetivo;$('observations').value=r.observaciones;
-  for(const rid of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r'])$(rid).dataset.touched='1';
+  for(const rid of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','covenin-p-r','covenin-s-r','qual-p-r','qual-s-r'])$(rid).dataset.touched='1';
   syncMethodPanels();updateInitial();updateResidual();switchView('evaluate');
 }
 window.deleteRisk=async function(id){if(!(await confirmBox('Eliminar evaluación','La evaluación se eliminará de tu cuenta y de la caché local. Esta acción no se puede deshacer.')))return;try{await deleteCloudRecord(id)}catch(err){console.error(err);toast('No fue posible eliminarla de Supabase. No se realizaron cambios.','danger');return}records=records.filter(x=>x.id!==id);persist();renderAll();toast('Evaluación eliminada.','success')}
