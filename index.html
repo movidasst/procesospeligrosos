@@ -120,7 +120,7 @@
       <section id="view-dashboard" class="section active">
         <div class="stats-grid">
           <div class="card stat"><div class="stat-label">Evaluaciones</div><div id="stat-total" class="stat-value">0</div><div class="stat-note">Registros de tu cuenta</div></div>
-          <div class="card stat"><div class="stat-label">Residual alto / muy alto</div><div id="stat-critical" class="stat-value" style="color:#b42318">0</div><div class="stat-note">Prioridad de tratamiento</div></div>
+          <div class="card stat"><div class="stat-label">Prioridad residual alta / crítica</div><div id="stat-critical" class="stat-value" style="color:#b42318">0</div><div class="stat-note">Según el método utilizado</div></div>
           <div class="card stat"><div class="stat-label">Controles implementados</div><div id="stat-controls" class="stat-value" style="color:#2f7d32">0</div><div class="stat-note">Declarados como verificados</div></div>
           <div class="card stat"><div class="stat-label">Reducción de categoría</div><div id="stat-reduced" class="stat-value">0</div><div class="stat-note">Inicial → residual</div></div>
         </div>
@@ -131,7 +131,7 @@
         </div>
 
         <div class="grid-2" style="margin-top:12px">
-          <div class="card card-pad"><div class="section-head" style="margin-top:0"><div><h2 class="section-title">Matriz 5×5 residual</h2><p class="section-sub">P × S. Umbrales definidos por la herramienta.</p></div></div><div class="heatmap-wrap"><div id="heatmap" class="heatmap"></div></div></div>
+          <div class="card card-pad"><div class="section-head" style="margin-top:0"><div><h2 class="section-title">Mapa 5×5 residual</h2><p class="section-sub">Solo muestra evaluaciones realizadas con la Matriz 5×5 de La Movida SST.</p></div></div><div class="heatmap-wrap"><div id="heatmap" class="heatmap"></div></div></div>
           <div class="card card-pad"><div class="section-head" style="margin-top:0"><div><h2 class="section-title">Prioridades</h2><p class="section-sub">Riesgos residuales altos o muy altos.</p></div></div><div id="alerts" class="alerts"><div class="record-desc">Sin evaluaciones críticas.</div></div></div>
         </div>
       </section>
@@ -325,9 +325,9 @@
       <section id="view-matrix" class="section">
         <div class="section-head"><div><h2 class="section-title">Matriz de riesgos</h2><p class="section-sub">Evaluaciones sincronizadas con tu cuenta. En móvil se muestran como tarjetas; en escritorio, como tabla.</p></div><span id="matrix-count" class="count-pill">0</span></div>
         <div class="toolbar no-print"><div class="toolbar-actions"><button id="excel-export" class="btn btn-green" type="button">Excel</button><button id="pdf-export" class="btn btn-danger" type="button">PDF</button><button id="print-btn" class="btn btn-secondary" type="button">Imprimir</button></div><div class="toolbar-actions"><button id="json-backup" class="btn btn-soft" type="button">Respaldo JSON</button></div></div>
-        <div class="filters no-print"><input id="filter-text" class="input" type="search" placeholder="Buscar área, proceso, puesto, peligro…"><select id="filter-initial" class="select"><option value="">Riesgo inicial · todos</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Muy Alto</option></select><select id="filter-residual" class="select"><option value="">Riesgo residual · todos</option><option>Eliminado</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Muy Alto</option></select></div>
+        <div class="filters no-print"><input id="filter-text" class="input" type="search" placeholder="Buscar área, proceso, actividad, peligro, exposición…"><select id="filter-initial" class="select"><option value="">Prioridad inicial · todas</option><option value="low">Baja / aceptable</option><option value="medium">Media / mejorable</option><option value="high">Alta</option><option value="very">Crítica / muy alta</option></select><select id="filter-residual" class="select"><option value="">Prioridad residual · todas</option><option value="eliminated">Eliminado</option><option value="low">Baja / aceptable</option><option value="medium">Media / mejorable</option><option value="high">Alta</option><option value="very">Crítica / muy alta</option></select></div>
         <div id="mobile-records" class="mobile-records"></div>
-        <div class="desktop-table"><div class="table-wrap"><table class="table"><thead><tr><th>Contexto</th><th>Peligro / escenario</th><th>Evento / consecuencia</th><th>Inicial</th><th>Medidas adicionales</th><th>Residual</th><th>Acciones</th></tr></thead><tbody id="risk-tbody"></tbody></table></div></div>
+        <div class="desktop-table"><div class="table-wrap"><table class="table"><thead><tr><th>Contexto</th><th>Peligro / exposición</th><th>Evento / consecuencia</th><th>Método / inicial</th><th>Medidas adicionales</th><th>Residual</th><th>Acciones</th></tr></thead><tbody id="risk-tbody"></tbody></table></div></div>
       </section>
 
       <section id="view-catalogs" class="section">
