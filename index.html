@@ -612,23 +612,29 @@ function syncMethodPanels(){
   $('method-help').textContent=METHOD_HELP[m]||'';
   updateInitial();updateResidual();
 }
+function residualMethodTouched(m){
+  const ids=m==='william_fine'?['fine-c-r','fine-e-r','fine-p-r']:m==='gtc45'?['gtc-nd-r','gtc-ne-r','gtc-nc-r']:m==='iperc_cualitativo'?['qual-p-r','qual-s-r']:['p-residual','s-residual'];
+  return ids.some(function(id){return $(id).dataset.touched==='1'});
+}
 function syncExposureToMethod(){
   const freq=$('exposure-frequency').value;
   const fine={continua:'10',frecuente:'6',ocasional:'3',esporadica:'1'}[freq];
   const gtc={continua:'4',frecuente:'3',ocasional:'2',esporadica:'1'}[freq];
-  if(fine&&!$('fine-e').dataset.touched){$('fine-e').value=fine;$('fine-e-r').value=fine}
-  if(gtc&&!$('gtc-ne').dataset.touched){$('gtc-ne').value=gtc;$('gtc-ne-r').value=gtc}
+  if(fine&&!$('fine-e').dataset.touched)$('fine-e').value=fine;
+  if(fine&&!$('fine-e-r').dataset.touched)$('fine-e-r').value=fine;
+  if(gtc&&!$('gtc-ne').dataset.touched)$('gtc-ne').value=gtc;
+  if(gtc&&!$('gtc-ne-r').dataset.touched)$('gtc-ne-r').value=gtc;
   updateInitial();updateResidual();
 }
 function updateInitial(){
   const m=$('method-selector').value,result=evaluateRisk(m,methodInitialValues());
   setRisk('initial',result);
   if(m==='gtc45')$('gtc-np-read').textContent=result.np===0?'Bajo · directo IV':formatScore(result.np)+' · '+result.npLabel;
-  if(!$('edit-id').value){
-    if(m==='matriz_5x5_movida'&&!$('p-residual').dataset.touched){$('p-residual').value=$('p-initial').value;$('s-residual').value=$('s-initial').value}
-    if(m==='william_fine'&&!$('fine-p-r').dataset.touched){$('fine-c-r').value=$('fine-c').value;$('fine-e-r').value=$('fine-e').value;$('fine-p-r').value=$('fine-p').value}
-    if(m==='gtc45'&&!$('gtc-nd-r').dataset.touched){$('gtc-nd-r').value=$('gtc-nd').value;$('gtc-ne-r').value=$('gtc-ne').value;$('gtc-nc-r').value=$('gtc-nc').value}
-    if(m==='iperc_cualitativo'&&!$('qual-p-r').dataset.touched){$('qual-p-r').value=$('qual-p').value;$('qual-s-r').value=$('qual-s').value}
+  if(!$('edit-id').value&&!residualMethodTouched(m)){
+    if(m==='matriz_5x5_movida'){$('p-residual').value=$('p-initial').value;$('s-residual').value=$('s-initial').value}
+    if(m==='william_fine'){$('fine-c-r').value=$('fine-c').value;$('fine-e-r').value=$('fine-e').value;$('fine-p-r').value=$('fine-p').value}
+    if(m==='gtc45'){$('gtc-nd-r').value=$('gtc-nd').value;$('gtc-ne-r').value=$('gtc-ne').value;$('gtc-nc-r').value=$('gtc-nc').value}
+    if(m==='iperc_cualitativo'){$('qual-p-r').value=$('qual-p').value;$('qual-s-r').value=$('qual-s').value}
   }
   updateResidual();
 }
@@ -674,7 +680,7 @@ function restoreDraft(){
     }
   }
   for(const k of controlKeys){$('c-'+k).checked=Boolean(d['c-'+k]);$('cf-'+k).hidden=!$('c-'+k).checked}
-  for(const id of ['p-residual','fine-p-r','gtc-nd-r','qual-p-r'])$(id).dataset.touched='1';
+  for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r'])$(id).dataset.touched='1';
   syncMethodPanels();updateInitial();updateResidual();$('draft-note').textContent='Se recuperó un borrador local.';
 }
 $('risk-form').addEventListener('input',saveDraft);$('risk-form').addEventListener('change',saveDraft);
@@ -748,7 +754,7 @@ function resetForm(keepContext=false){
   if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}
   $('exposure-who').value='trabajadores';$('exposure-frequency').value='ocasional';
   for(const key of controlKeys){$('cf-'+key).hidden=true;$('st-'+key).value='propuesto'}
-  for(const id of ['p-residual','fine-p-r','gtc-nd-r','qual-p-r'])$(id).dataset.touched='';
+  for(const id of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r'])$(id).dataset.touched='';
   for(const id of ['fine-e','gtc-ne'])$(id).dataset.touched='';
   $('residual-state').value='previsto';
   const dk=draftKey();if(dk)localStorage.removeItem(dk);
@@ -778,7 +784,7 @@ window.editRisk=function(id){
   $('qual-p-r').value=String(r.qual_probabilidad_residual);$('qual-s-r').value=String(r.qual_severidad_residual);
   $('residual-just-prob').value=r.justificacion_probabilidad;$('residual-just-conseq').value=r.justificacion_consecuencia;$('control-evidence').value=r.evidencia_control;
   $('responsible').value=r.responsable;$('target-date').value=r.fecha_objetivo;$('observations').value=r.observaciones;
-  for(const rid of ['p-residual','fine-p-r','gtc-nd-r','qual-p-r'])$(rid).dataset.touched='1';
+  for(const rid of ['p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r'])$(rid).dataset.touched='1';
   syncMethodPanels();updateInitial();updateResidual();switchView('evaluate');
 }
 window.deleteRisk=async function(id){if(!(await confirmBox('Eliminar evaluación','La evaluación se eliminará de tu cuenta y de la caché local. Esta acción no se puede deshacer.')))return;try{await deleteCloudRecord(id)}catch(err){console.error(err);toast('No fue posible eliminarla de Supabase. No se realizaron cambios.','danger');return}records=records.filter(x=>x.id!==id);persist();renderAll();toast('Evaluación eliminada.','success')}
