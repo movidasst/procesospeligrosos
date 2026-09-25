@@ -345,6 +345,7 @@
         <div class="storage-box"><h3>Dónde se guardan tus evaluaciones</h3><p>Las evaluaciones definitivas se guardan en <strong>Supabase</strong> asociadas a tu cuenta. El navegador mantiene una caché por integrante y el borrador activo para facilitar continuidad y recuperación. Cambiar de dispositivo ya no implica perder las evaluaciones sincronizadas. Excel y JSON continúan disponibles como respaldo y portabilidad.</p></div>
         <div class="storage-box"><h3>Catálogos centralizados en Supabase</h3><p>La aplicación ya no depende de Firebase. El navegador consulta únicamente <code>catalogos_riesgo_publicos()</code>; la tabla base no tiene lectura ni escritura directa para <code>anon</code> o <code>authenticated</code>. Para cambiar los catálogos se utiliza una operación administrativa controlada.</p></div>
         <div class="storage-box"><h3>Administración técnica</h3><p>El botón <strong>Administrar catálogos</strong> abre <code>catalogos-admin.html</code> en esta misma pestaña. El panel exige credenciales de un administrador general y permite crear, editar, ordenar, activar o desactivar registros sin modificar SQL.</p></div>
+        <div class="storage-box"><h3>Fundamento metodológico</h3><p>La herramienta separa <strong>peligro, exposición, evento, consecuencia y riesgo</strong>. ISO 45002:2023 se utiliza como referencia de gestión. Para valoración incorpora: <strong>Matriz 5×5 La Movida SST</strong> como convención configurable; <strong>William T. Fine</strong> con C × E × P; y <strong>GTC 45:2012</strong> con NP = ND × NE y NR = NP × NC. El modo IPERC cualitativo 3×3 es una convención de apoyo y no una escala universal obligatoria.</p><p style="margin-top:7px"><a href="https://www.iso.org/standard/76619.html" target="_blank" rel="noopener">ISO 45002:2023</a> · <a href="https://www.contaduria.gov.co/documents/115223/1516030/GTC%2B45%2BDE%2B2012.pdf/a327e06c-2bbc-954a-ba69-7dbe10a17880?download=true" target="_blank" rel="noopener">GTC 45:2012</a> · <a href="https://documentacion.fundacionmapfre.org/documentacion/pt/bib/13949.do" target="_blank" rel="noopener">William Fine · Evaluación matemática para control de riesgos</a></p></div>
       </section>
     </div>
   </main>
@@ -861,7 +862,7 @@ buildHeatmap();
 
 // ---------- JSON ----------
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-$('json-backup').onclick=backupJSON;function backupJSON(){const payload={app:'La Movida SST Plus · Matriz de Riesgos',version:3,exported_at:new Date().toISOString(),records,catalog_cache:catalogs};downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),`respaldo_matriz_riesgos_${new Date().toISOString().slice(0,10)}.json`);toast('Respaldo JSON descargado.','success')}
+$('json-backup').onclick=backupJSON;function backupJSON(){const payload={app:'La Movida SST Plus · Matriz de Riesgos',version:4,exported_at:new Date().toISOString(),records,catalog_cache:catalogs};downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),`respaldo_matriz_riesgos_${new Date().toISOString().slice(0,10)}.json`);toast('Respaldo JSON descargado.','success')}
 $('json-restore-btn').onclick=()=>$('json-file').click();$('json-file').addEventListener('change',async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;if(f.size>10*1024*1024){toast('El JSON supera 10 MB.','danger');return}try{const obj=JSON.parse(await f.text());const arr=Array.isArray(obj?.records)?obj.records:[];const normalized=arr.map(normalizeRecord).filter(Boolean);if(!(await confirmBox('Restaurar respaldo',`Se cargarán ${normalized.length} registros del archivo y se sincronizarán con tu cuenta. Los registros existentes con otros ID se conservarán.`)))return;records=normalized;persist();markAllPending(records);renderAll();toast('Respaldo cargado. Sincronizando con Supabase…','success');await syncFromCloud()}catch(err){console.error(err);toast('No se pudo leer o sincronizar el respaldo JSON.','danger')}});
 
 // ---------- EXCEL ----------
@@ -949,12 +950,32 @@ $('excel-file').addEventListener('change',async function(e){
 });
 
 // ---------- PDF ----------
-$('pdf-export').onclick=()=>{if(!window.jspdf?.jsPDF){toast('jsPDF no está disponible.','danger');return}const {jsPDF}=window.jspdf,doc=new jsPDF('landscape','pt','a4');doc.setFontSize(16);doc.setTextColor(11,42,111);doc.text('Matriz de Riesgos SST · La Movida SST Plus',36,34);doc.setFontSize(8);doc.setTextColor(90);doc.text('Matriz 5x5: convención de la herramienta. ISO 45002:2023 utilizada como referencia de gestión.',36,49);const body=records.map(r=>[r.area,r.proceso,r.puesto,r.tipo_peligro_texto||r.tipo_peligro,r.evento_riesgo_texto,r.consecuencia_texto,`${r.riesgo_inicial_valor} ${r.riesgo_inicial_texto}`,controlsSummary(r).map(x=>`${x[0]}: ${x[1]}`).join('\n')||'—',`${r.riesgo_residual_valor} ${r.riesgo_residual_texto}\n${r.estado_residual}`]);doc.autoTable({startY:62,head:[['Área','Proceso','Puesto','Peligro','Evento','Consecuencia','Inicial','Controles','Residual']],body,styles:{fontSize:6.5,cellPadding:3,valign:'top'},headStyles:{fillColor:[11,42,111]},columnStyles:{7:{cellWidth:160}}});doc.save(`Matriz_Riesgos_SST_${new Date().toISOString().slice(0,10)}.pdf`)};$('print-btn').onclick=()=>window.print();
+$('pdf-export').onclick=function(){
+  if(!window.jspdf||!window.jspdf.jsPDF){toast('jsPDF no está disponible.','danger');return}
+  const jsPDF=window.jspdf.jsPDF,doc=new jsPDF('landscape','pt','a4');
+  doc.setFontSize(16);doc.setTextColor(11,42,111);doc.text('Matriz de Riesgos SST · La Movida SST Plus',36,34);
+  doc.setFontSize(8);doc.setTextColor(90);doc.text('Peligro → Exposición → Evento → Consecuencia → Riesgo → Controles | Evaluación multimétodo',36,49);
+  const body=records.map(function(r){
+    return[
+      r.area+'\n'+r.proceso+'\n'+(r.actividad_tarea||''),
+      r.puesto+'\n'+r.trabajadores_expuestos+' exp.',
+      (r.tipo_peligro_texto||r.tipo_peligro||'—')+'\n'+exposureSummary(r),
+      (r.evento_riesgo_texto||'—')+'\n→ '+(r.consecuencia_texto||'—'),
+      r.metodo_label+'\n'+formatScore(r.riesgo_inicial_valor)+' · '+r.riesgo_inicial_texto,
+      controlsSummary(r).map(function(x){return x[0]+': '+x[1]}).join('\n')||'—',
+      formatScore(r.riesgo_residual_valor)+' · '+r.riesgo_residual_texto+'\n'+(r.estado_residual==='verificado'?'Verificado':'Previsto'),
+      r.responsable||'—'
+    ];
+  });
+  doc.autoTable({startY:62,head:[['Contexto','Puesto','Peligro / exposición','Evento / consecuencia','Método / inicial','Controles','Residual','Responsable']],body,styles:{fontSize:6.2,cellPadding:3,valign:'top'},headStyles:{fillColor:[11,42,111]},columnStyles:{5:{cellWidth:150}}});
+  doc.save('Matriz_Riesgos_SST_'+new Date().toISOString().slice(0,10)+'.pdf');
+};
+$('print-btn').onclick=function(){window.print()};
 
 $('clear-data').onclick=async()=>{if(!(await confirmBox('Limpiar caché local','Esto no elimina las evaluaciones guardadas en Supabase. La aplicación volverá a descargarlas al sincronizar.')))return;const sk=storeKey(),dk=draftKey(),pk=pendingKey();if(sk)localStorage.removeItem(sk);if(dk)localStorage.removeItem(dk);if(pk)localStorage.removeItem(pk);records=[];renderAll();resetForm(false);toast('Caché local limpiada. Recuperando datos de tu cuenta…','success');await syncFromCloud()};
 
 // Inicio visual
-updateInitial();updateResidual();renderAll();
+syncMethodPanels();syncExposureToMethod();renderAll();
 </script>
 </body>
 </html>
