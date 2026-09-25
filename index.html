@@ -653,18 +653,90 @@ function controlData(key){return{checked:$('c-'+key).checked,description:text($(
 function implementedCount(r){return [['cont_eliminar','estado_eliminar'],['cont_sustituir','estado_sustituir'],['cont_ingenieria','estado_ingenieria'],['cont_administrativo','estado_administrativo'],['cont_epp','estado_epp']].filter(function(x){return r[x[0]]&&r[x[1]]==='implementado'}).length}
 
 // ---------- BORRADOR ----------
-const draftIds=['area','process','danger-process','job','workers','element','element-desc','hazard','energy','event','consequence','scenario','existing-controls','p-initial','s-initial','residual-state','p-residual','s-residual','responsible','target-date','observations','d-eliminate','st-eliminate','d-substitute','st-substitute','d-engineering','st-engineering','d-administrative','st-administrative','d-ppe','st-ppe'];
-function saveDraft(){if($('edit-id').value)return;const key=draftKey();if(!key)return;const d={};for(const id of draftIds)d[id]=$(id)?.value??'';for(const k of controlKeys)d[`c-${k}`]=$(`c-${k}`).checked;localStorage.setItem(key,JSON.stringify(d));$('draft-note').textContent='Borrador guardado localmente.'}
-function restoreDraft(){if($('edit-id').value)return;const key=draftKey();if(!key)return;const d=safeParse(localStorage.getItem(key),null);if(!d)return;for(const id of draftIds){if(d[id]!==undefined&&$(id)){if($(id).tagName==='SELECT'&&![...$(id).options].some(o=>o.value===String(d[id])))continue;$(id).value=d[id]}}for(const k of controlKeys){$(`c-${k}`).checked=Boolean(d[`c-${k}`]);$(`cf-${k}`).hidden=!$(`c-${k}`).checked}updateInitial();updateResidual();$('draft-note').textContent='Se recuperó un borrador local.'}
+const draftIds=['method-selector','area','process','danger-process','activity','job','workers','element','element-desc','hazard','energy','exposure-who','exposure-frequency','exposure-duration','exposure-intensity','exposure-route','exposure-desc','event','consequence','scenario','existing-controls','p-initial','s-initial','fine-c','fine-e','fine-p','gtc-nd','gtc-ne','gtc-nc','qual-p','qual-s','residual-state','p-residual','s-residual','fine-c-r','fine-e-r','fine-p-r','gtc-nd-r','gtc-ne-r','gtc-nc-r','qual-p-r','qual-s-r','residual-just-prob','residual-just-conseq','control-evidence','responsible','target-date','observations','d-eliminate','st-eliminate','d-substitute','st-substitute','d-engineering','st-engineering','d-administrative','st-administrative','d-ppe','st-ppe'];
+function saveDraft(){
+  if($('edit-id').value)return;
+  const key=draftKey();if(!key)return;
+  const d={};for(const id of draftIds)d[id]=$(id)?$(id).value:'';
+  for(const k of controlKeys)d['c-'+k]=$('c-'+k).checked;
+  localStorage.setItem(key,JSON.stringify(d));$('draft-note').textContent='Borrador guardado localmente.';
+}
+function restoreDraft(){
+  if($('edit-id').value)return;
+  const key=draftKey();if(!key)return;
+  const d=safeParse(localStorage.getItem(key),null);if(!d)return;
+  for(const id of draftIds){
+    if(d[id]!==undefined&&$(id)){
+      if($(id).tagName==='SELECT'&&![...$(id).options].some(function(o){return o.value===String(d[id])}))continue;
+      $(id).value=d[id];
+    }
+  }
+  for(const k of controlKeys){$('c-'+k).checked=Boolean(d['c-'+k]);$('cf-'+k).hidden=!$('c-'+k).checked}
+  for(const id of ['p-residual','fine-p-r','gtc-nd-r','qual-p-r'])$(id).dataset.touched='1';
+  syncMethodPanels();updateInitial();updateResidual();$('draft-note').textContent='Se recuperó un borrador local.';
+}
 $('risk-form').addEventListener('input',saveDraft);$('risk-form').addEventListener('change',saveDraft);
 
-function validateForm(){showMsg($('form-error'),'');const form=$('risk-form');if(!form.checkValidity()){form.reportValidity();return false}for(const key of controlKeys){const c=controlData(key);if(c.checked&&!c.description){showMsg($('form-error'),'Describe cada medida de control que marques.');return false}}
- const pI=clampInt($('p-initial').value,1,5,1),sI=clampInt($('s-initial').value,1,5,1),pR=clampInt($('p-residual').value,0,5,pI),sR=clampInt($('s-residual').value,1,5,sI),initial=pI*sI,residual=pR===0?0:pR*sR;
- const impl=controlKeys.map(controlData).filter(x=>x.checked&&x.status==='implementado').length;
- if(pR===0){const elim=controlData('eliminate');if(!elim.checked||elim.status!=='implementado'){showMsg($('form-error'),'Solo usa “0 · Peligro eliminado” si la eliminación está documentada como implementada y verificada.');return false}if($('residual-state').value!=='verificado'){$('residual-state').value='verificado'}}
- if($('residual-state').value==='verificado'&&residual<initial&&impl===0){showMsg($('form-error'),'Para declarar una reducción residual como “verificada”, registra al menos un control implementado y verificado. Si todavía es una estimación, selecciona “Previsto”.');return false}
- return true}
-function buildRecord(){const old=records.find(r=>r.id===$('edit-id').value);const c={eliminate:controlData('eliminate'),substitute:controlData('substitute'),engineering:controlData('engineering'),administrative:controlData('administrative'),ppe:controlData('ppe')};return normalizeRecord({id:old?.id||uuid(),created_at:old?.created_at||new Date().toISOString(),updated_at:new Date().toISOString(),legacy_id:old?.legacy_id||'',area:$('area').value,proceso:$('process').value,proceso_peligroso:$('danger-process').value,puesto:$('job').value,trabajadores_expuestos:$('workers').value,elemento_proceso:$('element').value,elemento_proceso_texto:currentOptionText('element'),desc_elemento:$('element-desc').value,tipo_peligro:$('hazard').value,tipo_peligro_texto:currentOptionText('hazard'),energia:$('energy').value,energia_texto:currentOptionText('energy'),evento_riesgo:$('event').value,evento_riesgo_texto:currentOptionText('event'),consecuencia:$('consequence').value,consecuencia_texto:currentOptionText('consequence'),descripcion_peligro:$('scenario').value,controles_existentes:$('existing-controls').value,probabilidad_inicial:$('p-initial').value,severidad_inicial:$('s-initial').value,cont_eliminar:c.eliminate.checked?c.eliminate.description:'',estado_eliminar:c.eliminate.status,cont_sustituir:c.substitute.checked?c.substitute.description:'',estado_sustituir:c.substitute.status,cont_ingenieria:c.engineering.checked?c.engineering.description:'',estado_ingenieria:c.engineering.status,cont_administrativo:c.administrative.checked?c.administrative.description:'',estado_administrativo:c.administrative.status,cont_epp:c.ppe.checked?c.ppe.description:'',estado_epp:c.ppe.status,estado_residual:$('residual-state').value,probabilidad_residual:$('p-residual').value,severidad_residual:$('s-residual').value,responsable:$('responsible').value,fecha_objetivo:$('target-date').value,observaciones:$('observations').value})}
+function formInitialResult(){return evaluateRisk($('method-selector').value,methodInitialValues())}
+function formResidualResult(){return isEliminatedInForm()?{score:0,category:'Eliminado',band:'eliminated'}:evaluateRisk($('method-selector').value,methodResidualValues())}
+function probabilityFactor(method,where){
+  if(method==='william_fine')return where==='initial'?num($('fine-e').value)*num($('fine-p').value):num($('fine-e-r').value)*num($('fine-p-r').value);
+  if(method==='gtc45')return where==='initial'?num($('gtc-nd').value)*num($('gtc-ne').value):num($('gtc-nd-r').value)*num($('gtc-ne-r').value);
+  if(method==='iperc_cualitativo')return where==='initial'?num($('qual-p').value):num($('qual-p-r').value);
+  return where==='initial'?num($('p-initial').value):num($('p-residual').value);
+}
+function consequenceFactor(method,where){
+  if(method==='william_fine')return where==='initial'?num($('fine-c').value):num($('fine-c-r').value);
+  if(method==='gtc45')return where==='initial'?num($('gtc-nc').value):num($('gtc-nc-r').value);
+  if(method==='iperc_cualitativo')return where==='initial'?num($('qual-s').value):num($('qual-s-r').value);
+  return where==='initial'?num($('s-initial').value):num($('s-residual').value);
+}
+function validateForm(){
+  showMsg($('form-error'),'');
+  const form=$('risk-form');
+  if(!form.checkValidity()){form.reportValidity();return false}
+  const controls=controlKeys.map(controlData),selected=controls.filter(function(x){return x.checked}),impl=controls.filter(function(x){return x.checked&&x.status==='implementado'}).length;
+  for(const ctl of selected){if(!ctl.description){showMsg($('form-error'),'Describe cada medida de control que marques.');return false}}
+  const method=$('method-selector').value,initial=formInitialResult(),residual=formResidualResult(),reduced=Number(residual.score)<Number(initial.score);
+  if(residual.score===0&&!isEliminatedInForm()){
+    showMsg($('form-error'),'Para declarar el peligro eliminado, registra Eliminación como implementada y verificada.');return false;
+  }
+  if(reduced&&selected.length===0){
+    showMsg($('form-error'),'No reduzcas el riesgo residual sin registrar la medida de control que fundamenta el cambio.');return false;
+  }
+  if(reduced&&probabilityFactor(method,'residual')<probabilityFactor(method,'initial')&&!text($('residual-just-prob').value,700)){
+    showMsg($('form-error'),'Explica por qué disminuye la probabilidad o la exposición después de los controles.');return false;
+  }
+  if(reduced&&consequenceFactor(method,'residual')<consequenceFactor(method,'initial')&&!text($('residual-just-conseq').value,700)){
+    showMsg($('form-error'),'Explica por qué disminuye la severidad o consecuencia. No debe reducirse automáticamente por agregar un control.');return false;
+  }
+  if($('residual-state').value==='verificado'&&reduced&&impl===0){
+    showMsg($('form-error'),'Para una reducción residual verificada, registra al menos un control implementado y verificado.');return false;
+  }
+  if($('residual-state').value==='verificado'&&reduced&&!text($('control-evidence').value,900)){
+    showMsg($('form-error'),'Una reducción verificada necesita evidencia de eficacia del control.');return false;
+  }
+  return true;
+}
+function buildRecord(){
+  const old=records.find(function(r){return r.id===$('edit-id').value});
+  const ctl={eliminate:controlData('eliminate'),substitute:controlData('substitute'),engineering:controlData('engineering'),administrative:controlData('administrative'),ppe:controlData('ppe')};
+  return normalizeRecord({
+    id:old?old.id:uuid(),created_at:old?old.created_at:new Date().toISOString(),updated_at:new Date().toISOString(),legacy_id:old?old.legacy_id:'',
+    metodo_evaluacion:$('method-selector').value,
+    area:$('area').value,proceso:$('process').value,proceso_peligroso:$('danger-process').value,actividad_tarea:$('activity').value,puesto:$('job').value,trabajadores_expuestos:$('workers').value,
+    elemento_proceso:$('element').value,elemento_proceso_texto:currentOptionText('element'),desc_elemento:$('element-desc').value,tipo_peligro:$('hazard').value,tipo_peligro_texto:currentOptionText('hazard'),energia:$('energy').value,energia_texto:currentOptionText('energy'),
+    expuestos_tipo:$('exposure-who').value,frecuencia_exposicion:$('exposure-frequency').value,duracion_exposicion:$('exposure-duration').value,intensidad_exposicion:$('exposure-intensity').value,via_exposicion:$('exposure-route').value,descripcion_exposicion:$('exposure-desc').value,
+    evento_riesgo:$('event').value,evento_riesgo_texto:currentOptionText('event'),consecuencia:$('consequence').value,consecuencia_texto:currentOptionText('consequence'),descripcion_peligro:$('scenario').value,controles_existentes:$('existing-controls').value,
+    probabilidad_inicial:$('p-initial').value,severidad_inicial:$('s-initial').value,probabilidad_residual:$('p-residual').value,severidad_residual:$('s-residual').value,
+    fine_consecuencia_inicial:$('fine-c').value,fine_exposicion_inicial:$('fine-e').value,fine_probabilidad_inicial:$('fine-p').value,fine_consecuencia_residual:$('fine-c-r').value,fine_exposicion_residual:$('fine-e-r').value,fine_probabilidad_residual:$('fine-p-r').value,
+    gtc_nd_inicial:$('gtc-nd').value,gtc_ne_inicial:$('gtc-ne').value,gtc_nc_inicial:$('gtc-nc').value,gtc_nd_residual:$('gtc-nd-r').value,gtc_ne_residual:$('gtc-ne-r').value,gtc_nc_residual:$('gtc-nc-r').value,
+    qual_probabilidad_inicial:$('qual-p').value,qual_severidad_inicial:$('qual-s').value,qual_probabilidad_residual:$('qual-p-r').value,qual_severidad_residual:$('qual-s-r').value,
+    cont_eliminar:ctl.eliminate.checked?ctl.eliminate.description:'',estado_eliminar:ctl.eliminate.status,cont_sustituir:ctl.substitute.checked?ctl.substitute.description:'',estado_sustituir:ctl.substitute.status,cont_ingenieria:ctl.engineering.checked?ctl.engineering.description:'',estado_ingenieria:ctl.engineering.status,cont_administrativo:ctl.administrative.checked?ctl.administrative.description:'',estado_administrativo:ctl.administrative.status,cont_epp:ctl.ppe.checked?ctl.ppe.description:'',estado_epp:ctl.ppe.status,
+    estado_residual:$('residual-state').value,peligro_eliminado:isEliminatedInForm(),justificacion_probabilidad:$('residual-just-prob').value,justificacion_consecuencia:$('residual-just-conseq').value,evidencia_control:$('control-evidence').value,
+    responsable:$('responsible').value,fecha_objetivo:$('target-date').value,observaciones:$('observations').value
+  });
+}
 async function saveRecord(goMatrix=false){if(!validateForm())return false;const r=buildRecord(),idx=records.findIndex(x=>x.id===r.id);if(idx>=0)records[idx]=r;else records.push(r);persist();const dk=draftKey();if(dk)localStorage.removeItem(dk);try{await saveCloudRecord(r);clearPending(r.id);toast(idx>=0?'Evaluación actualizada y sincronizada.':'Evaluación guardada y sincronizada.','success')}catch(err){console.error(err);markPending(r.id);toast('La evaluación quedó en caché local y se intentará sincronizar nuevamente.','warning')}resetForm(true);renderAll();if(goMatrix)switchView('matrix');return true}
 $('risk-form').addEventListener('submit',async e=>{e.preventDefault();await saveRecord(false)});$('save-view').onclick=async()=>{await saveRecord(true)};$('clear-form').onclick=async()=>{if(await confirmBox('Limpiar formulario','Se perderá el borrador actual.'))resetForm(false)};$('cancel-edit').onclick=()=>resetForm(false);
 function resetForm(keepContext=false){const ctx=keepContext?{area:$('area').value,process:$('process').value,danger:$('danger-process').value,job:$('job').value,workers:$('workers').value}:null;$('risk-form').reset();$('edit-id').value='';$('form-title').textContent='Nueva evaluación';$('cancel-edit').classList.add('hidden');$('workers').value=ctx?.workers||'1';if(ctx){$('area').value=ctx.area;$('process').value=ctx.process;$('danger-process').value=ctx.danger;$('job').value=ctx.job}for(const key of controlKeys){$(`cf-${key}`).hidden=true;$(`st-${key}`).value='propuesto'}$('p-initial').value='1';$('s-initial').value='1';$('p-residual').value='1';$('p-residual').dataset.touched='';$('s-residual').value='1';$('residual-state').value='previsto';$('s-residual').disabled=false;const dk=draftKey();if(dk)localStorage.removeItem(dk);showMsg($('form-error'),'');showMsg($('form-success'),'');$('draft-note').textContent='Autoguardado local del borrador activo.';updateInitial();updateResidual()}
