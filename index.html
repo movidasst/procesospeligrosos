@@ -363,7 +363,7 @@
         <div class="storage-box"><h3>Dónde se guardan tus evaluaciones</h3><p>Las evaluaciones definitivas se guardan en <strong>Supabase</strong> asociadas a tu cuenta. El navegador mantiene una caché por integrante y el borrador activo para facilitar continuidad y recuperación. Cambiar de dispositivo ya no implica perder las evaluaciones sincronizadas. Excel y JSON continúan disponibles como respaldo y portabilidad.</p></div>
         <div class="storage-box"><h3>Catálogos centralizados en Supabase</h3><p>La aplicación ya no depende de Firebase. El navegador consulta únicamente <code>catalogos_riesgo_publicos()</code>; la tabla base no tiene lectura ni escritura directa para <code>anon</code> o <code>authenticated</code>. Para cambiar los catálogos se utiliza una operación administrativa controlada.</p></div>
         <div class="storage-box"><h3>Catálogos técnicos</h3><p>Los catálogos de elementos, peligros, energías, eventos y consecuencias se mantienen centralizados en Supabase y la aplicación los consume mediante una operación de solo lectura. La administración no se expone desde esta página pública.</p></div>
-        <div class="storage-box"><h3>Fundamento metodológico</h3><p>La herramienta separa <strong>peligro, exposición, evento, consecuencia y riesgo</strong>. ISO 45002:2023 se utiliza como referencia de gestión. Para valoración incorpora: <strong>Matriz 5×5 La Movida SST</strong> como convención configurable; <strong>William T. Fine</strong> con C × E × P; y <strong>GTC 45:2012</strong> con NP = ND × NE y NR = NP × NC. El modo IPERC cualitativo 3×3 es una convención de apoyo y no una escala universal obligatoria.</p><p style="margin-top:7px"><a href="https://www.iso.org/standard/76619.html" target="_blank" rel="noopener">ISO 45002:2023</a> · <a href="https://www.contaduria.gov.co/documents/115223/1516030/GTC%2B45%2BDE%2B2012.pdf/a327e06c-2bbc-954a-ba69-7dbe10a17880?download=true" target="_blank" rel="noopener">GTC 45:2012</a> · <a href="https://documentacion.fundacionmapfre.org/documentacion/pt/bib/13949.do" target="_blank" rel="noopener">William Fine · Evaluación matemática para control de riesgos</a></p></div>
+        <div class="storage-box"><h3>Fundamento metodológico</h3><p>La herramienta separa <strong>peligro, exposición, evento, consecuencia y riesgo</strong>. ISO 45002:2023 se utiliza como referencia de gestión. Para valoración incorpora: <strong>Matriz 5×5 La Movida SST</strong> como convención configurable; <strong>William T. Fine</strong> con C × E × P; y <strong>GTC 45:2012</strong> con NP = ND × NE y NR = NP × NC; <strong>COVENIN 4004:2000</strong> con su matriz cualitativa de probabilidad y consecuencia. El modo IPERC cualitativo 3×3 es una convención de apoyo y no una escala universal obligatoria.</p><p style="margin-top:7px"><a href="https://www.iso.org/standard/76619.html" target="_blank" rel="noopener">ISO 45002:2023</a> · <a href="https://www.contaduria.gov.co/documents/115223/1516030/GTC%2B45%2BDE%2B2012.pdf/a327e06c-2bbc-954a-ba69-7dbe10a17880?download=true" target="_blank" rel="noopener">GTC 45:2012</a> · <a href="https://documentacion.fundacionmapfre.org/documentacion/pt/bib/13949.do" target="_blank" rel="noopener">William Fine · Evaluación matemática para control de riesgos</a></p></div>
       </section>
     </div>
   </main>
@@ -488,10 +488,12 @@ function normalizeRecord(r){
   const fineCR=num(r.fine_consecuencia_residual,fineCI),fineER=num(r.fine_exposicion_residual,fineEI),finePR=num(r.fine_probabilidad_residual,finePI);
   const gtcND=num(r.gtc_nd_inicial,10),gtcNE=num(r.gtc_ne_inicial,4),gtcNC=num(r.gtc_nc_inicial,10);
   const gtcNDR=num(r.gtc_nd_residual,gtcND),gtcNER=num(r.gtc_ne_residual,gtcNE),gtcNCR=num(r.gtc_nc_residual,gtcNC);
+  const covPI=clampInt(r.covenin_probabilidad_inicial,1,3,1),covSI=clampInt(r.covenin_severidad_inicial,1,3,1);
+  const covPR=clampInt(r.covenin_probabilidad_residual,1,3,covPI),covSR=clampInt(r.covenin_severidad_residual,1,3,covSI);
   const qualPI=clampInt(r.qual_probabilidad_inicial,1,3,1),qualSI=clampInt(r.qual_severidad_inicial,1,3,1);
   const qualPR=clampInt(r.qual_probabilidad_residual,0,3,qualPI),qualSR=clampInt(r.qual_severidad_residual,1,3,qualSI);
-  const initial=evaluateRisk(method,method==='william_fine'?{c:fineCI,e:fineEI,p:finePI}:method==='gtc45'?{nd:gtcND,ne:gtcNE,nc:gtcNC}:method==='iperc_cualitativo'?{p:qualPI,s:qualSI}:{p:pI,s:sI});
-  let residual=evaluateRisk(method,method==='william_fine'?{c:fineCR,e:fineER,p:finePR}:method==='gtc45'?{nd:gtcNDR,ne:gtcNER,nc:gtcNCR}:method==='iperc_cualitativo'?{p:qualPR,s:qualSR}:{p:pR,s:sR});
+  const initial=evaluateRisk(method,method==='william_fine'?{c:fineCI,e:fineEI,p:finePI}:method==='gtc45'?{nd:gtcND,ne:gtcNE,nc:gtcNC}:method==='covenin_4004'?{p:covPI,s:covSI}:method==='iperc_cualitativo'?{p:qualPI,s:qualSI}:{p:pI,s:sI});
+  let residual=evaluateRisk(method,method==='william_fine'?{c:fineCR,e:fineER,p:finePR}:method==='gtc45'?{nd:gtcNDR,ne:gtcNER,nc:gtcNCR}:method==='covenin_4004'?{p:covPR,s:covSR}:method==='iperc_cualitativo'?{p:qualPR,s:qualSR}:{p:pR,s:sR});
   const eliminated=Boolean(r.peligro_eliminado)||(method==='matriz_5x5_movida'&&pR===0)||(method==='iperc_cualitativo'&&qualPR===0);
   if(eliminated)residual={score:0,category:'Eliminado',band:'eliminated',action:'Peligro eliminado y verificado.'};
   return {id:text(r.id,120)||uuid(),created_at:text(r.created_at,60)||new Date().toISOString(),updated_at:text(r.updated_at,60)||new Date().toISOString(),legacy_id:text(r.legacy_id,160),
@@ -504,10 +506,11 @@ function normalizeRecord(r){
     fine_consecuencia_inicial:fineCI,fine_exposicion_inicial:fineEI,fine_probabilidad_inicial:finePI,fine_consecuencia_residual:fineCR,fine_exposicion_residual:fineER,fine_probabilidad_residual:finePR,
     gtc_nd_inicial:gtcND,gtc_ne_inicial:gtcNE,gtc_nc_inicial:gtcNC,gtc_np_inicial:method==='gtc45'?initial.np:null,
     gtc_nd_residual:gtcNDR,gtc_ne_residual:gtcNER,gtc_nc_residual:gtcNCR,gtc_np_residual:method==='gtc45'?residual.np:null,
+    covenin_probabilidad_inicial:covPI,covenin_severidad_inicial:covSI,covenin_probabilidad_residual:covPR,covenin_severidad_residual:covSR,
     qual_probabilidad_inicial:qualPI,qual_severidad_inicial:qualSI,qual_probabilidad_residual:qualPR,qual_severidad_residual:qualSR,
-    riesgo_inicial_valor:initial.score,riesgo_inicial_texto:initial.category,riesgo_inicial_banda:initial.band,riesgo_inicial_accion:initial.action,
+    riesgo_inicial_valor:initial.score,riesgo_inicial_display:initial.display||formatScore(initial.score),riesgo_inicial_texto:initial.category,riesgo_inicial_banda:initial.band,riesgo_inicial_accion:initial.action,
     cont_eliminar:text(r.cont_eliminar,500),estado_eliminar:r.estado_eliminar==='implementado'?'implementado':'propuesto',cont_sustituir:text(r.cont_sustituir,500),estado_sustituir:r.estado_sustituir==='implementado'?'implementado':'propuesto',cont_ingenieria:text(r.cont_ingenieria,500),estado_ingenieria:r.estado_ingenieria==='implementado'?'implementado':'propuesto',cont_administrativo:text(r.cont_administrativo,500),estado_administrativo:r.estado_administrativo==='implementado'?'implementado':'propuesto',cont_epp:text(r.cont_epp,500),estado_epp:r.estado_epp==='implementado'?'implementado':'propuesto',
-    estado_residual:r.estado_residual==='verificado'?'verificado':'previsto',peligro_eliminado:eliminated,riesgo_residual_valor:residual.score,riesgo_residual_texto:residual.category,riesgo_residual_banda:residual.band,riesgo_residual_accion:residual.action,
+    estado_residual:r.estado_residual==='verificado'?'verificado':'previsto',peligro_eliminado:eliminated,riesgo_residual_valor:residual.score,riesgo_residual_display:residual.display||formatScore(residual.score),riesgo_residual_texto:residual.category,riesgo_residual_banda:residual.band,riesgo_residual_accion:residual.action,
     justificacion_probabilidad:text(r.justificacion_probabilidad,700),justificacion_consecuencia:text(r.justificacion_consecuencia,700),evidencia_control:text(r.evidencia_control,900),
     responsable:text(r.responsable,140),fecha_objetivo:text(r.fecha_objetivo,20),observaciones:text(r.observaciones,350)};
 }
@@ -815,6 +818,7 @@ window.editRisk=function(id){
   $('p-initial').value=String(r.probabilidad_inicial);$('s-initial').value=String(r.severidad_inicial);
   $('fine-c').value=String(r.fine_consecuencia_inicial);$('fine-e').value=String(r.fine_exposicion_inicial);$('fine-p').value=String(r.fine_probabilidad_inicial);
   $('gtc-nd').value=String(r.gtc_nd_inicial);$('gtc-ne').value=String(r.gtc_ne_inicial);$('gtc-nc').value=String(r.gtc_nc_inicial);
+  $('covenin-p').value=String(r.covenin_probabilidad_inicial);$('covenin-s').value=String(r.covenin_severidad_inicial);
   $('qual-p').value=String(r.qual_probabilidad_inicial);$('qual-s').value=String(r.qual_severidad_inicial);
   const map={eliminate:['cont_eliminar','estado_eliminar'],substitute:['cont_sustituir','estado_sustituir'],engineering:['cont_ingenieria','estado_ingenieria'],administrative:['cont_administrativo','estado_administrativo'],ppe:['cont_epp','estado_epp']};
   for(const k of Object.keys(map)){const d=map[k][0],s=map[k][1];$('c-'+k).checked=Boolean(r[d]);$('cf-'+k).hidden=!r[d];$('d-'+k).value=r[d]||'';$('st-'+k).value=r[s]||'propuesto'}
@@ -822,6 +826,7 @@ window.editRisk=function(id){
   $('p-residual').value=String(r.probabilidad_residual);$('s-residual').value=String(r.severidad_residual);
   $('fine-c-r').value=String(r.fine_consecuencia_residual);$('fine-e-r').value=String(r.fine_exposicion_residual);$('fine-p-r').value=String(r.fine_probabilidad_residual);
   $('gtc-nd-r').value=String(r.gtc_nd_residual);$('gtc-ne-r').value=String(r.gtc_ne_residual);$('gtc-nc-r').value=String(r.gtc_nc_residual);
+  $('covenin-p-r').value=String(r.covenin_probabilidad_residual);$('covenin-s-r').value=String(r.covenin_severidad_residual);
   $('qual-p-r').value=String(r.qual_probabilidad_residual);$('qual-s-r').value=String(r.qual_severidad_residual);
   $('residual-just-prob').value=r.justificacion_probabilidad;$('residual-just-conseq').value=r.justificacion_consecuencia;$('control-evidence').value=r.evidencia_control;
   $('responsible').value=r.responsable;$('target-date').value=r.fecha_objetivo;$('observations').value=r.observaciones;
@@ -840,7 +845,7 @@ function filteredRecords(){
 }
 ['filter-text','filter-initial','filter-residual'].forEach(function(id){$(id).addEventListener(id==='filter-text'?'input':'change',renderMatrix)});
 function addText(parent,tag,cls,val){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=val==null?'':val;parent.appendChild(e);return e}
-function riskBadgeNode(cat,score,band){const s=document.createElement('span');s.className='risk-badge '+riskClass(band||cat);s.textContent=formatScore(score)+' · '+cat;return s}
+function riskBadgeNode(cat,score,band,display){const s=document.createElement('span');s.className='risk-badge '+riskClass(band||cat);s.textContent=(display||formatScore(score))+' · '+cat;return s}
 function controlsSummary(r){return [['Eliminación',r.cont_eliminar,r.estado_eliminar],['Sustitución',r.cont_sustituir,r.estado_sustituir],['Ingeniería',r.cont_ingenieria,r.estado_ingenieria],['Administrativo',r.cont_administrativo,r.estado_administrativo],['EPP',r.cont_epp,r.estado_epp]].filter(function(x){return x[1]})}
 function exposureSummary(r){
   const parts=[];
@@ -860,7 +865,7 @@ function renderMatrix(){
   for(const r of data){
     const card=document.createElement('article');card.className='card record-card';
     const top=document.createElement('div');top.className='record-top';const left=document.createElement('div');
-    addText(left,'h3','record-title',(r.area||'—')+' · '+(r.proceso||'—'));addText(left,'div','record-meta',(r.actividad_tarea||r.puesto||'—')+' · '+r.metodo_label);top.appendChild(left);top.appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor,r.riesgo_residual_banda));card.appendChild(top);
+    addText(left,'h3','record-title',(r.area||'—')+' · '+(r.proceso||'—'));addText(left,'div','record-meta',(r.actividad_tarea||r.puesto||'—')+' · '+r.metodo_label);top.appendChild(left);top.appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor,r.riesgo_residual_banda,r.riesgo_residual_display));card.appendChild(top);
     const rg=document.createElement('div');rg.className='record-grid';
     const m1=document.createElement('div');m1.className='mini';addText(m1,'span','','Peligro');addText(m1,'strong','',r.tipo_peligro_texto||r.tipo_peligro||'—');
     const m2=document.createElement('div');m2.className='mini';addText(m2,'span','','Exposición');addText(m2,'strong','',exposureSummary(r));
@@ -875,9 +880,9 @@ function renderMatrix(){
     addText(cells[0],'strong','',r.area);addText(cells[0],'div','',r.proceso);addText(cells[0],'div','',r.actividad_tarea||'');addText(cells[0],'div','',r.puesto+' · '+r.trabajadores_expuestos+' exp.');
     addText(cells[1],'strong','',r.tipo_peligro_texto||r.tipo_peligro||'—');addText(cells[1],'div','',r.elemento_proceso_texto||'');addText(cells[1],'div','',exposureSummary(r));
     addText(cells[2],'strong','',r.evento_riesgo_texto||'—');addText(cells[2],'div','',r.consecuencia_texto||'—');addText(cells[2],'div','',r.descripcion_peligro||'');
-    addText(cells[3],'strong','',r.metodo_label);cells[3].appendChild(riskBadgeNode(r.riesgo_inicial_texto,r.riesgo_inicial_valor,r.riesgo_inicial_banda));addText(cells[3],'div','',r.riesgo_inicial_accion||'');
+    addText(cells[3],'strong','',r.metodo_label);cells[3].appendChild(riskBadgeNode(r.riesgo_inicial_texto,r.riesgo_inicial_valor,r.riesgo_inicial_banda,r.riesgo_inicial_display));addText(cells[3],'div','',r.riesgo_inicial_accion||'');
     const ctrls=controlsSummary(r);if(ctrls.length)for(const x of ctrls)addText(cells[4],'div','',x[0]+' ['+(x[2]==='implementado'?'verificado':'propuesto')+']: '+x[1]);else addText(cells[4],'div','','Sin medidas adicionales registradas');
-    cells[5].appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor,r.riesgo_residual_banda));addText(cells[5],'div','',r.estado_residual==='verificado'?'Verificado':'Previsto');if(r.evidencia_control)addText(cells[5],'div','', 'Evidencia: '+r.evidencia_control);
+    cells[5].appendChild(riskBadgeNode(r.riesgo_residual_texto,r.riesgo_residual_valor,r.riesgo_residual_banda,r.riesgo_residual_display));addText(cells[5],'div','',r.estado_residual==='verificado'?'Verificado':'Previsto');if(r.evidencia_control)addText(cells[5],'div','', 'Evidencia: '+r.evidencia_control);
     cells[6].className='actions';const e2=document.createElement('button');e2.className='btn btn-secondary';e2.type='button';e2.textContent='Editar';e2.onclick=function(){window.editRisk(r.id)};const d2=document.createElement('button');d2.className='btn btn-danger';d2.type='button';d2.textContent='×';d2.onclick=function(){window.deleteRisk(r.id)};cells[6].append(e2,d2);tbody.appendChild(tr);
   }
 }
@@ -919,10 +924,10 @@ const excelHeaders=[
 'Elemento ID','Elemento','Descripción Elemento','Peligro ID','Tipo de Peligro','Energía ID','Energía / Fuente',
 'Tipo de Expuestos','Frecuencia Exposición','Duración Exposición','Intensidad / Concentración','Vía / Forma Exposición','Descripción Exposición',
 'Evento ID','Evento no deseado','Consecuencia ID','Consecuencia / Daño','Escenario','Controles Existentes',
-'P Inicial 5x5','S Inicial 5x5','Fine C Inicial','Fine E Inicial','Fine P Inicial','GTC ND Inicial','GTC NE Inicial','GTC NC Inicial','GTC NP Inicial','Cual P Inicial','Cual S Inicial',
+'P Inicial 5x5','S Inicial 5x5','Fine C Inicial','Fine E Inicial','Fine P Inicial','GTC ND Inicial','GTC NE Inicial','GTC NC Inicial','GTC NP Inicial','COV Probabilidad Inicial','COV Consecuencia Inicial','Cual P Inicial','Cual S Inicial',
 'Riesgo Inicial Valor','Riesgo Inicial Categoría','Banda Inicial',
 'Eliminación','Estado Eliminación','Sustitución','Estado Sustitución','Ingeniería','Estado Ingeniería','Administrativo','Estado Administrativo','EPP','Estado EPP',
-'Estado Residual','P Residual 5x5','S Residual 5x5','Fine C Residual','Fine E Residual','Fine P Residual','GTC ND Residual','GTC NE Residual','GTC NC Residual','GTC NP Residual','Cual P Residual','Cual S Residual',
+'Estado Residual','P Residual 5x5','S Residual 5x5','Fine C Residual','Fine E Residual','Fine P Residual','GTC ND Residual','GTC NE Residual','GTC NC Residual','GTC NP Residual','COV Probabilidad Residual','COV Consecuencia Residual','Cual P Residual','Cual S Residual',
 'Riesgo Residual Valor','Riesgo Residual Categoría','Banda Residual','Justificación Probabilidad / Exposición','Justificación Consecuencia / Severidad','Evidencia de Eficacia','Responsable','Fecha Objetivo','Observaciones'
 ];
 function excelRow(r){return[
@@ -930,11 +935,11 @@ r.id,r.metodo_evaluacion,r.area,r.proceso,r.proceso_peligroso,r.actividad_tarea,
 r.elemento_proceso,r.elemento_proceso_texto,r.desc_elemento,r.tipo_peligro,r.tipo_peligro_texto,r.energia,r.energia_texto,
 r.expuestos_tipo,r.frecuencia_exposicion,r.duracion_exposicion,r.intensidad_exposicion,r.via_exposicion,r.descripcion_exposicion,
 r.evento_riesgo,r.evento_riesgo_texto,r.consecuencia,r.consecuencia_texto,r.descripcion_peligro,r.controles_existentes,
-r.probabilidad_inicial,r.severidad_inicial,r.fine_consecuencia_inicial,r.fine_exposicion_inicial,r.fine_probabilidad_inicial,r.gtc_nd_inicial,r.gtc_ne_inicial,r.gtc_nc_inicial,r.gtc_np_inicial,r.qual_probabilidad_inicial,r.qual_severidad_inicial,
-r.riesgo_inicial_valor,r.riesgo_inicial_texto,r.riesgo_inicial_banda,
+r.probabilidad_inicial,r.severidad_inicial,r.fine_consecuencia_inicial,r.fine_exposicion_inicial,r.fine_probabilidad_inicial,r.gtc_nd_inicial,r.gtc_ne_inicial,r.gtc_nc_inicial,r.gtc_np_inicial,r.covenin_probabilidad_inicial,r.covenin_severidad_inicial,r.qual_probabilidad_inicial,r.qual_severidad_inicial,
+r.metodo_evaluacion==='covenin_4004'?'':r.riesgo_inicial_valor,r.riesgo_inicial_texto,r.riesgo_inicial_banda,
 r.cont_eliminar,r.estado_eliminar,r.cont_sustituir,r.estado_sustituir,r.cont_ingenieria,r.estado_ingenieria,r.cont_administrativo,r.estado_administrativo,r.cont_epp,r.estado_epp,
-r.estado_residual,r.probabilidad_residual,r.severidad_residual,r.fine_consecuencia_residual,r.fine_exposicion_residual,r.fine_probabilidad_residual,r.gtc_nd_residual,r.gtc_ne_residual,r.gtc_nc_residual,r.gtc_np_residual,r.qual_probabilidad_residual,r.qual_severidad_residual,
-r.riesgo_residual_valor,r.riesgo_residual_texto,r.riesgo_residual_banda,r.justificacion_probabilidad,r.justificacion_consecuencia,r.evidencia_control,r.responsable,r.fecha_objetivo,r.observaciones
+r.estado_residual,r.probabilidad_residual,r.severidad_residual,r.fine_consecuencia_residual,r.fine_exposicion_residual,r.fine_probabilidad_residual,r.gtc_nd_residual,r.gtc_ne_residual,r.gtc_nc_residual,r.gtc_np_residual,r.covenin_probabilidad_residual,r.covenin_severidad_residual,r.qual_probabilidad_residual,r.qual_severidad_residual,
+r.metodo_evaluacion==='covenin_4004'?'':r.riesgo_residual_valor,r.riesgo_residual_texto,r.riesgo_residual_banda,r.justificacion_probabilidad,r.justificacion_consecuencia,r.evidencia_control,r.responsable,r.fecha_objetivo,r.observaciones
 ]}
 async function createWorkbook(includeData=true){
   const wb=new ExcelJS.Workbook();wb.creator='La Movida SST Plus';
@@ -942,10 +947,11 @@ async function createWorkbook(includeData=true){
   info.addRows([
     ['MATRIZ DE RIESGOS SST · LA MOVIDA SST PLUS'],
     ['Lógica','Peligro → Exposición → Evento → Consecuencia → Riesgo → Controles → Riesgo residual.'],
-    ['Métodos','matriz_5x5_movida | william_fine | gtc45 | iperc_cualitativo'],
+    ['Métodos','matriz_5x5_movida | william_fine | gtc45 | covenin_4004 | iperc_cualitativo'],
     ['Matriz 5x5','Convención configurable de La Movida SST. R = P × S.'],
     ['William T. Fine','Grado de peligrosidad = C × E × P.'],
     ['GTC 45:2012','NP = ND × NE; NR = NP × NC. ND Bajo no recibe valor y se clasifica directamente en nivel IV.'],
+    ['COVENIN 4004:2000','Matriz cualitativa: probabilidad Baja/Media/Alta × consecuencias LD/D/ED → T, TO, M, I o IN.'],
     ['IPERC cualitativo','Convención 3×3 configurable; no representa una escala universal obligatoria.'],
     ['Riesgo residual','Toda disminución debe relacionarse con controles concretos. Si se declara verificada, debe existir control implementado y evidencia de eficacia.'],
     ['Compatibilidad','Los registros antiguos sin método se interpretan como matriz_5x5_movida.']
@@ -985,9 +991,9 @@ $('excel-file').addEventListener('change',async function(e){
         elemento_proceso:val(row,'Elemento ID'),elemento_proceso_texto:val(row,'Elemento'),desc_elemento:val(row,'Descripción Elemento'),tipo_peligro:val(row,'Peligro ID'),tipo_peligro_texto:val(row,'Tipo de Peligro'),energia:val(row,'Energía ID'),energia_texto:val(row,'Energía / Fuente'),
         expuestos_tipo:val(row,'Tipo de Expuestos'),frecuencia_exposicion:val(row,'Frecuencia Exposición'),duracion_exposicion:val(row,'Duración Exposición'),intensidad_exposicion:val(row,'Intensidad / Concentración'),via_exposicion:val(row,'Vía / Forma Exposición'),descripcion_exposicion:val(row,'Descripción Exposición'),
         evento_riesgo:val(row,'Evento ID'),evento_riesgo_texto:val(row,'Evento no deseado'),consecuencia:val(row,'Consecuencia ID'),consecuencia_texto:val(row,'Consecuencia / Daño'),descripcion_peligro:val(row,'Escenario'),controles_existentes:val(row,'Controles Existentes'),
-        probabilidad_inicial:val(row,'P Inicial 5x5'),severidad_inicial:val(row,'S Inicial 5x5'),fine_consecuencia_inicial:val(row,'Fine C Inicial'),fine_exposicion_inicial:val(row,'Fine E Inicial'),fine_probabilidad_inicial:val(row,'Fine P Inicial'),gtc_nd_inicial:val(row,'GTC ND Inicial'),gtc_ne_inicial:val(row,'GTC NE Inicial'),gtc_nc_inicial:val(row,'GTC NC Inicial'),qual_probabilidad_inicial:val(row,'Cual P Inicial'),qual_severidad_inicial:val(row,'Cual S Inicial'),
+        probabilidad_inicial:val(row,'P Inicial 5x5'),severidad_inicial:val(row,'S Inicial 5x5'),fine_consecuencia_inicial:val(row,'Fine C Inicial'),fine_exposicion_inicial:val(row,'Fine E Inicial'),fine_probabilidad_inicial:val(row,'Fine P Inicial'),gtc_nd_inicial:val(row,'GTC ND Inicial'),gtc_ne_inicial:val(row,'GTC NE Inicial'),gtc_nc_inicial:val(row,'GTC NC Inicial'),covenin_probabilidad_inicial:val(row,'COV Probabilidad Inicial'),covenin_severidad_inicial:val(row,'COV Consecuencia Inicial'),qual_probabilidad_inicial:val(row,'Cual P Inicial'),qual_severidad_inicial:val(row,'Cual S Inicial'),
         cont_eliminar:val(row,'Eliminación'),estado_eliminar:val(row,'Estado Eliminación'),cont_sustituir:val(row,'Sustitución'),estado_sustituir:val(row,'Estado Sustitución'),cont_ingenieria:val(row,'Ingeniería'),estado_ingenieria:val(row,'Estado Ingeniería'),cont_administrativo:val(row,'Administrativo'),estado_administrativo:val(row,'Estado Administrativo'),cont_epp:val(row,'EPP'),estado_epp:val(row,'Estado EPP'),
-        estado_residual:val(row,'Estado Residual'),probabilidad_residual:val(row,'P Residual 5x5'),severidad_residual:val(row,'S Residual 5x5'),fine_consecuencia_residual:val(row,'Fine C Residual'),fine_exposicion_residual:val(row,'Fine E Residual'),fine_probabilidad_residual:val(row,'Fine P Residual'),gtc_nd_residual:val(row,'GTC ND Residual'),gtc_ne_residual:val(row,'GTC NE Residual'),gtc_nc_residual:val(row,'GTC NC Residual'),qual_probabilidad_residual:val(row,'Cual P Residual'),qual_severidad_residual:val(row,'Cual S Residual'),
+        estado_residual:val(row,'Estado Residual'),probabilidad_residual:val(row,'P Residual 5x5'),severidad_residual:val(row,'S Residual 5x5'),fine_consecuencia_residual:val(row,'Fine C Residual'),fine_exposicion_residual:val(row,'Fine E Residual'),fine_probabilidad_residual:val(row,'Fine P Residual'),gtc_nd_residual:val(row,'GTC ND Residual'),gtc_ne_residual:val(row,'GTC NE Residual'),gtc_nc_residual:val(row,'GTC NC Residual'),covenin_probabilidad_residual:val(row,'COV Probabilidad Residual'),covenin_severidad_residual:val(row,'COV Consecuencia Residual'),qual_probabilidad_residual:val(row,'Cual P Residual'),qual_severidad_residual:val(row,'Cual S Residual'),
         justificacion_probabilidad:val(row,'Justificación Probabilidad / Exposición'),justificacion_consecuencia:val(row,'Justificación Consecuencia / Severidad'),evidencia_control:val(row,'Evidencia de Eficacia'),responsable:val(row,'Responsable'),fecha_objetivo:val(row,'Fecha Objetivo'),observaciones:val(row,'Observaciones')
       }));
     }
@@ -1009,9 +1015,9 @@ $('pdf-export').onclick=function(){
       r.puesto+'\n'+r.trabajadores_expuestos+' exp.',
       (r.tipo_peligro_texto||r.tipo_peligro||'—')+'\n'+exposureSummary(r),
       (r.evento_riesgo_texto||'—')+'\n→ '+(r.consecuencia_texto||'—'),
-      r.metodo_label+'\n'+formatScore(r.riesgo_inicial_valor)+' · '+r.riesgo_inicial_texto,
+      r.metodo_label+'\n'+r.riesgo_inicial_display+' · '+r.riesgo_inicial_texto,
       controlsSummary(r).map(function(x){return x[0]+': '+x[1]}).join('\n')||'—',
-      formatScore(r.riesgo_residual_valor)+' · '+r.riesgo_residual_texto+'\n'+(r.estado_residual==='verificado'?'Verificado':'Previsto'),
+      r.riesgo_residual_display+' · '+r.riesgo_residual_texto+'\n'+(r.estado_residual==='verificado'?'Verificado':'Previsto'),
       r.responsable||'—'
     ];
   });
